@@ -6,6 +6,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAIN = os.path.join(ROOT, "backend", "app", "main.py")
 RENDER = os.path.join(ROOT, "render.yaml")
 REQUIREMENTS = os.path.join(ROOT, "backend", "requirements.txt")
+DOCKERFILE = os.path.join(ROOT, "Dockerfile")
+DOCKERIGNORE = os.path.join(ROOT, ".dockerignore")
+README = os.path.join(ROOT, "README.md")
 
 
 class DeploymentContractTest(unittest.TestCase):
@@ -31,6 +34,27 @@ class DeploymentContractTest(unittest.TestCase):
         with open(REQUIREMENTS, "r", encoding="utf-8") as f:
             requirements = f.read()
         self.assertIn("pydantic-settings", requirements)
+
+    def test_huggingface_space_docker_config_exists(self):
+        self.assertTrue(os.path.exists(DOCKERFILE))
+        with open(DOCKERFILE, "r", encoding="utf-8") as f:
+            dockerfile = f.read()
+        self.assertIn("FROM python:3.11-slim", dockerfile)
+        self.assertIn("pip install --no-cache-dir -r /app/backend/requirements.txt", dockerfile)
+        self.assertIn("EXPOSE 7860", dockerfile)
+        self.assertIn("uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}", dockerfile)
+
+        with open(README, "r", encoding="utf-8") as f:
+            readme = f.read()
+        self.assertIn("sdk: docker", readme)
+        self.assertIn("app_port: 7860", readme)
+
+        self.assertTrue(os.path.exists(DOCKERIGNORE))
+        with open(DOCKERIGNORE, "r", encoding="utf-8") as f:
+            dockerignore = f.read()
+        self.assertIn("backend/.env", dockerignore)
+        self.assertIn(".env", dockerignore)
+        self.assertIn(".git", dockerignore)
 
 
 if __name__ == "__main__":

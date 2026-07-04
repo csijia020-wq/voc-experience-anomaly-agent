@@ -1,3 +1,14 @@
+---
+title: VoC Experience Anomaly Agent
+emoji: 📊
+colorFrom: blue
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # VoC 体验异动分析 Agent
 
 > 这是一个模拟项目和求职作品集项目，用于展示 VoC 体验异动分析 Agent 的产品设计、后端链路、指标计算和大模型报告能力。项目使用模拟数据，不代表真实生产系统或真实业务数据。
@@ -70,7 +81,53 @@ python scripts/check_deepseek_connection.py
 
 项目已支持前后端同源部署：线上访问根路径 `/` 会直接打开 Agent 页面，页面会自动请求同一域名下的 `/api/chat/stream` 和 `/health`，不再写死 `localhost`。
 
-推荐使用 Render Web Service 生成长期作品集链接：
+### 方案一：Hugging Face Spaces（不需要绑卡）
+
+推荐创建 Docker 类型 Space：
+
+1. 打开 Hugging Face，进入 `Spaces` -> `Create new Space`。
+2. Space name 填：
+
+```text
+voc-experience-anomaly-agent
+```
+
+3. License 可选 `MIT`。
+4. SDK 选择 `Docker`。
+5. Visibility 可先选 `Public`，方便面试官直接访问。
+6. 创建后进入 Space 的 `Settings` -> `Repository secrets`，手动新增：
+
+```env
+DEEPSEEK_API_KEY=你的真实 DeepSeek Key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
+DEMO_SEED=20260702
+DEMO_DETERMINISTIC=true
+DEEPSEEK_USE_ENV_PROXY=false
+LLM_CONNECT_TIMEOUT_SECONDS=10
+LLM_READ_TIMEOUT_SECONDS=60
+LLM_MAX_RETRIES=1
+```
+
+不要把真实 Key 写入代码、README、Dockerfile 或 GitHub。
+
+7. 将本仓库内容推送到 Hugging Face Space 仓库。Space 会读取根目录的 `Dockerfile`，启动命令为：
+
+```text
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}
+```
+
+8. 部署完成后，打开 Hugging Face 提供的地址，例如：
+
+```text
+https://huggingface.co/spaces/你的用户名/voc-experience-anomaly-agent
+```
+
+这个地址就是可以放进自我介绍网站、简历或作品集的正式演示链接。免费 Space 可能会休眠，首次打开需要等待启动；启动后即可正常输入问题并生成报告。
+
+### 方案二：Render Web Service（需要账号验证）
+
+如果可以接受 Render 的账号验证，也可以使用 Render Web Service 生成长期作品集链接：
 
 1. 将本仓库推送到 GitHub。
 2. 在 Render 中选择 `New` -> `Blueprint`，连接仓库 `voc-experience-anomaly-agent`。
