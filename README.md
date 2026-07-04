@@ -81,7 +81,24 @@ python scripts/check_deepseek_connection.py
 
 项目已支持前后端同源部署：线上访问根路径 `/` 会直接打开 Agent 页面，页面会自动请求同一域名下的 `/api/chat/stream` 和 `/health`，不再写死 `localhost`。
 
-### 方案一：Hugging Face Spaces（不需要绑卡）
+### 方案一：GitHub Pages 静态作品集版（最稳，不需要后端）
+
+仓库已提供 `docs/index.html` 静态演示页，并通过 `.github/workflows/pages.yml` 发布到 GitHub Pages。这个页面不调用真实 DeepSeek，不连接后端服务器，不需要 API Key，适合作为简历和自我介绍网站中的稳定公开链接。
+
+启用方式：
+
+1. 打开 GitHub 仓库的 `Settings` -> `Pages`。
+2. 将 `Build and deployment` 的 `Source` 选择为 `GitHub Actions`。
+3. 回到 `Actions`，运行或等待 `Deploy static portfolio demo to GitHub Pages`。
+4. 部署成功后访问：
+
+```text
+https://csijia020-wq.github.io/voc-experience-anomaly-agent/
+```
+
+页面会模拟 Agent 的核心链路：用户输入、意图识别、数据查询、异动计算、报告生成和最终报告展示。完整后端版仍保留在仓库中，可本地运行或后续部署到云端。
+
+### 方案二：Hugging Face Spaces（不需要绑卡，但依赖平台账号状态）
 
 推荐创建 Docker 类型 Space：
 
@@ -125,7 +142,7 @@ https://huggingface.co/spaces/你的用户名/voc-experience-anomaly-agent
 
 这个地址就是可以放进自我介绍网站、简历或作品集的正式演示链接。免费 Space 可能会休眠，首次打开需要等待启动；启动后即可正常输入问题并生成报告。
 
-### 方案二：Render Web Service（需要账号验证）
+### 方案三：Render Web Service（需要账号验证）
 
 如果可以接受 Render 的账号验证，也可以使用 Render Web Service 生成长期作品集链接：
 

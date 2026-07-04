@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoC 体验异动分析 Agent | 静态作品集演示版</title>
+  <meta name="description" content="VoC 体验异动分析 Agent 的 GitHub Pages 静态作品集演示版。">
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #657083;
+      --line: #dfe4ec;
+      --red: #dc2626;
+      --blue: #2563eb;
+      --green: #16803c;
+      --amber: #b45309;
+      --soft-red: #fff1f1;
+      --soft-blue: #eef5ff;
+      --shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar .shell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--red);
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
+      gap: 18px;
+      padding: 22px 0 34px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .chat {
+      min-height: calc(100vh - 124px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-head {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .panel-head p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .messages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 18px;
+      flex: 1;
+    }
+
+    .bubble {
+      border-radius: 8px;
+      padding: 13px 14px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .bubble.user {
+      align-self: flex-end;
+      color: #fff;
+      background: var(--red);
+    }
+
+    .bubble.agent {
+      align-self: flex-start;
+      background: var(--soft-blue);
+      border-left: 4px solid var(--blue);
+    }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 14px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0 18px;
+      color: #fff;
+      background: var(--red);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 48px;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.62;
+    }
+
+    .report {
+      overflow: hidden;
+    }
+
+    .report-hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      padding: 24px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .report-hero h2 {
+      margin: 0 0 8px;
+      color: var(--red);
+      font-size: clamp(26px, 4vw, 40px);
+      line-height: 1.15;
+    }
+
+    .report-hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .stamp {
+      text-align: right;
+      color: var(--muted);
+      font-size: 13px;
+      min-width: 136px;
+    }
+
+    .stamp strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--ink);
+      font-size: 20px;
+    }
+
+    .notice {
+      margin: 18px 24px 0;
+      padding: 14px 16px;
+      border: 1px solid #f4c7c7;
+      border-radius: 8px;
+      background: var(--soft-red);
+      color: #7f1d1d;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      padding: 18px 24px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(27px, 4vw, 42px);
+      line-height: 1;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      color: #919aaa;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .down {
+      color: var(--blue);
+    }
+
+    .up {
+      color: var(--red);
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 18px;
+      padding: 0 24px 24px;
+    }
+
+    .block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 18px;
+    }
+
+    .block h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .summary {
+      margin: 0;
+      color: #2e394c;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .factor-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .factor {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcff;
+    }
+
+    .factor b {
+      display: block;
+      font-size: 15px;
+    }
+
+    .factor span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .factor strong {
+      font-size: 18px;
+    }
+
+    .chart-wrap {
+      overflow-x: auto;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 430px;
+      height: auto;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+    }
+
+    .table th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #f8fafc;
+    }
+
+    .footnote {
+      margin-top: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .layout,
+      .section-grid,
+      .report-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .chat {
+        min-height: auto;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stamp {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar .shell,
+      .composer,
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar .shell {
+        display: grid;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell">
+      <div class="brand">
+        <div class="brand-mark">VoC</div>
+        <div>
+          <h1>VoC 体验异动分析 Agent</h1>
+          <p>静态作品集演示版 · 不调用真实 DeepSeek · 不需要后端服务器</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="项目链接">
+        <span class="pill">Demo Seed 20260702</span>
+        <a class="pill" href="https://github.com/csijia020-wq/voc-experience-anomaly-agent" target="_blank" rel="noreferrer">查看完整代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell layout">
+    <section class="panel chat" aria-label="静态演示对话">
+      <div class="panel-head">
+        <h2>演示输入</h2>
+        <p>点击运行后，页面会模拟 Agent 的核心链路：意图识别、数据查询、异动计算和报告生成。</p>
+      </div>
+      <div id="messages" class="messages">
+        <div class="bubble user">生成到餐客服上周周报</div>
+        <div class="bubble agent">这是静态作品集演示版。完整工程代码支持 FastAPI、SSE 流式接口、DeepSeek 报告生成和降级报告。</div>
+      </div>
+      <div class="composer">
+        <input id="prompt" value="生成到餐客服上周周报" aria-label="演示问题">
+        <button id="runBtn" type="button">运行演示</button>
+      </div>
+    </section>
+
+    <section class="panel report" aria-label="体验异动分析报告">
+      <div class="report-hero">
+        <div>
+          <h2>到餐客服 体验异动分析周报</h2>
+          <p>2026W26（上周）vs 2025W26（去年同期）</p>
+        </div>
+        <div class="stamp">
+          静态生成时间
+          <strong>2026-07-04</strong>
+          作品集演示
+        </div>
+      </div>
+
+      <div class="notice">
+        本页面为 GitHub Pages 静态作品集演示版，使用固定模拟 VoC 数据，不调用真实 DeepSeek，不连接后端服务器，不代表真实生产数据或业务经营结果。完整后端 Agent 可在 GitHub 仓库中查看并本地运行。
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <span>本期万服</span>
+          <strong>120.47</strong>
+          <small>2026W26（上周）</small>
+        </div>
+        <div class="metric">
+          <span>去年同期万服</span>
+          <strong>126.72</strong>
+          <small>2025W26（去年同期）</small>
+        </div>
+        <div class="metric">
+          <span>万服同比</span>
+          <strong class="down">-4.94%</strong>
+          <small>下降，体验指标改善</small>
+        </div>
+        <div class="metric">
+          <span>服务量变化</span>
+          <strong>+4.5%</strong>
+          <small>服务量 92,568 · 订单量 7,684,020</small>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="block">
+          <h3>综合分析</h3>
+          <p class="summary">
+            本期到餐客服人工万服为 120.47，去年同期为 126.72，同比下降 4.94%，说明模拟数据下体验指标较去年同期有所改善。服务量同比增加 4.5%，但万服没有同步恶化，说明当前异动不应被解读为严重风险。需要关注服务量上升的区域与场景，并结合客服策略继续观察。
+          </p>
+          <p class="footnote">
+            服务量变化占比 = 某因素服务量变化 / 本期整体服务量。该指标用于近似衡量因素变化与整体异动之间的相对关联，不代表严格因果贡献。
+          </p>
+        </div>
+
+        <div class="block">
+          <h3>Top 因素</h3>
+          <div class="factor-list">
+            <div class="factor">
+              <div>
+                <b>华南战区</b>
+                <span>服务量增加，对整体体验指标形成向上压力</span>
+              </div>
+              <strong class="up">+0.48%</strong>
+            </div>
+            <div class="factor">
+              <div>
+                <b>退款进度</b>
+                <span>服务量减少，对整体体验指标形成向下作用</span>
+              </div>
+              <strong class="down">-0.04%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="block">
+          <h3>日万服趋势</h3>
+          <div class="chart-wrap">
+            <svg viewBox="0 0 560 260" role="img" aria-label="本期万服和去年同期万服趋势图">
+              <rect x="0" y="0" width="560" height="260" fill="#fff"/>
+              <g stroke="#e5e7eb" stroke-width="1">
+                <line x1="48" y1="40" x2="530" y2="40"/>
+                <line x1="48" y1="90" x2="530" y2="90"/>
+                <line x1="48" y1="140" x2="530" y2="140"/>
+                <line x1="48" y1="190" x2="530" y2="190"/>
+              </g>
+              <g fill="#7b8494" font-size="12">
+                <text x="16" y="44">135</text>
+                <text x="16" y="94">130</text>
+                <text x="16" y="144">125</text>
+                <text x="16" y="194">120</text>
+                <text x="48" y="228">周一</text>
+                <text x="126" y="228">周二</text>
+                <text x="204" y="228">周三</text>
+                <text x="282" y="228">周四</text>
+                <text x="360" y="228">周五</text>
+                <text x="438" y="228">周六</text>
+                <text x="506" y="228">周日</text>
+              </g>
+              <polyline points="60,142 138,120 216,132 294,118 372,136 450,126 518,138" fill="none" stroke="#dc2626" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="60,82 138,74 216,92 294,86 372,78 450,88 518,80" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 8"/>
+              <g fill="#dc2626">
+                <circle cx="60" cy="142" r="5"/><circle cx="138" cy="120" r="5"/><circle cx="216" cy="132" r="5"/><circle cx="294" cy="118" r="5"/><circle cx="372" cy="136" r="5"/><circle cx="450" cy="126" r="5"/><circle cx="518" cy="138" r="5"/>
+              </g>
+              <g fill="#2563eb">
+                <circle cx="60" cy="82" r="5"/><circle cx="138" cy="74" r="5"/><circle cx="216" cy="92" r="5"/><circle cx="294" cy="86" r="5"/><circle cx="372" cy="78" r="5"/><circle cx="450" cy="88" r="5"/><circle cx="518" cy="80" r="5"/>
+              </g>
+              <g font-size="13" fill="#334155">
+                <circle cx="60" cy="246" r="5" fill="#dc2626"/><text x="72" y="251">本期万服</text>
+                <circle cx="166" cy="246" r="5" fill="#2563eb"/><text x="178" y="251">去年同期</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="block">
+          <h3>维度明细</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>维度</th>
+                <th>因素</th>
+                <th>服务量变化占比</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>战区</td>
+                <td>华南战区</td>
+                <td class="up">+0.48%</td>
+              </tr>
+              <tr>
+                <td>问题类型</td>
+                <td>退款进度</td>
+                <td class="down">-0.04%</td>
+              </tr>
+              <tr>
+                <td>进线渠道</td>
+                <td>在线客服</td>
+                <td>+0.12%</td>
+              </tr>
+              <tr>
+                <td>城市等级</td>
+                <td>新一线</td>
+                <td>+0.09%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const messages = document.getElementById('messages');
+    const button = document.getElementById('runBtn');
+    const promptInput = document.getElementById('prompt');
+
+    const stages = [
+      ['意图识别', '识别为生成周报；业务为到餐客服；时间为上周；对比方式为去年同期。'],
+      ['数据查询', '读取固定模拟数据，生成周粒度指标、日趋势和维度明细。'],
+      ['异动计算', '计算本期万服、去年同期万服、同比变化和服务量变化占比。'],
+      ['报告生成', '静态演示版直接展示结构化报告；完整后端版会调用 DeepSeek 或降级报告。'],
+      ['完成', '报告已生成。核心指标：本期万服 120.47，同比 -4.94%。']
+    ];
+
+    function appendBubble(text, className) {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${className}`;
+      bubble.textContent = text;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function runDemo() {
+      button.disabled = true;
+      button.textContent = '演示中';
+      messages.innerHTML = '';
+      appendBubble(promptInput.value || '生成到餐客服上周周报', 'user');
+
+      stages.forEach((stage, index) => {
+        window.setTimeout(() => {
+          appendBubble(`${stage[0]}：${stage[1]}`, 'agent');
+          if (index === stages.length - 1) {
+            button.disabled = false;
+            button.textContent = '重新运行';
+          }
+        }, 420 * (index + 1));
+      });
+    }
+
+    button.addEventListener('click', runDemo);
+  </script>
+</body>
+</html>
