@@ -16,6 +16,11 @@ class FrontendContractTest(unittest.TestCase):
         self.assertIn("VoC 体验异动分析 Agent", self.html)
         self.assertIn("/api/chat/stream", self.html)
 
+    def test_api_base_url_is_deployable_same_origin(self):
+        self.assertNotIn("const API_BASE_URL = 'http://localhost:8000';", self.html)
+        self.assertIn("window.location.origin", self.html)
+        self.assertIn("window.location.protocol === 'file:'", self.html)
+
     def test_service_change_ratio_label_and_formatting(self):
         self.assertIn("服务量变化占比", self.html)
         self.assertNotIn("万服贡献度", self.html)

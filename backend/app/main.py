@@ -3,6 +3,7 @@ FastAPI主入口
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import sys
 import os
@@ -23,7 +24,9 @@ app = FastAPI(
 )
 
 # 挂载前端静态文件
-frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "project_delivery")
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+frontend_dir = os.path.join(project_root, "project_delivery")
+frontend_index = os.path.join(frontend_dir, "vibe_coding_prototype.html")
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 # CORS配置
@@ -40,14 +43,16 @@ app.include_router(chat_router)
 app.include_router(report_router)
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
-    """根路径"""
-    return {
-        "message": "VoC 体验异动分析 Agent API",
-        "version": "1.0.0",
-        "docs": "/docs"
-    }
+    """Serve the browser demo as the public entry point."""
+    return FileResponse(frontend_index)
+
+
+@app.get("/vibe_coding_prototype.html", include_in_schema=False)
+async def frontend_page():
+    """Serve the demo page on the same path used by local static hosting."""
+    return FileResponse(frontend_index)
 
 
 @app.get("/health")

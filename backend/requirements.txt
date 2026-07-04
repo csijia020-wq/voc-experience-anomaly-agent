@@ -13,6 +13,7 @@ numpy==1.26.3
 # Utils
 python-dotenv==1.0.0
 pydantic==2.6.0
+pydantic-settings==2.1.0
 httpx==0.26.0
 
 # CORS

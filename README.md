@@ -66,6 +66,37 @@ python scripts/check_deepseek_connection.py
 
 脚本会检查配置、DNS、TCP、TLS、API 鉴权和最小模型调用，API Key 只显示脱敏后四位。
 
+## 正式作品集链接部署
+
+项目已支持前后端同源部署：线上访问根路径 `/` 会直接打开 Agent 页面，页面会自动请求同一域名下的 `/api/chat/stream` 和 `/health`，不再写死 `localhost`。
+
+推荐使用 Render Web Service 生成长期作品集链接：
+
+1. 将本仓库推送到 GitHub。
+2. 在 Render 中选择 `New` -> `Blueprint`，连接仓库 `voc-experience-anomaly-agent`。
+3. Render 会读取根目录的 `render.yaml`，自动使用：
+
+```text
+buildCommand: pip install -r backend/requirements.txt
+startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+4. 在 Render 服务的 Environment 中手动新增：
+
+```env
+DEEPSEEK_API_KEY=你的真实 DeepSeek Key
+```
+
+不要把真实 Key 写入代码、README 或 `render.yaml`。
+
+5. 部署完成后，打开 Render 提供的地址，例如：
+
+```text
+https://voc-experience-anomaly-agent.onrender.com/
+```
+
+这个地址就是可以放进自我介绍网站、简历或作品集的正式演示链接。Render 免费实例可能会有冷启动，首次打开需要等待几十秒；冷启动后即可正常输入问题并生成报告。
+
 ## 固定演示问题
 
 ```text
