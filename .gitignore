@@ -1,0 +1,35 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Runtime state and local logs
+.runtime/
+logs/
+*.log
+*.pid
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Codex/agent workspace state
+.agents/
+.codex/
+
+# One-off local diagnostics that may print masked credentials or machine paths
+/test_api.py
+/test_api_local.py
+/test_ds.py
+/test_thinking.py
+/test_thinking_output.txt
+/api_check*.log
+/backend*.log
+/backend*.err.log
+/frontend_run.log
+/health.log
+/llm_test.log
+/port*.log
+/ds_out.log

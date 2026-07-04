@@ -1,0 +1,47 @@
+# 架构说明
+本 Skill 分两层执行。你（LLM）只负责第二层（文字解读），第一层（数学计算）由代码工具完成。
+不要自己做任何数学运算，直接读取计算工具输出的 JSON，基于其中的数字写结论。
+
+# 第一层：调用计算工具（anomaly_calc）
+在你输出任何内容之前，必须先调用 anomaly_calc 工具函数：
+
+输入参数：
+- current_data：本期两期明细数据（来自 friday-mcp-query）
+- compare_data：对比期明细数据
+- daily_current / daily_compare：日粒度数据（用于趋势图）
+- dimension_availability：维度可用性清单
+
+工具将自动完成：
+- 整体万服 YoY 计算
+- 各维度逐项计算 delta / YoY% / 贡献度% / 次/万单贡献
+- 异动打标（up_major / down_major / new_added / disappeared / new_actual / extreme_value）
+- 极端值判断：上期<10 且本期>100 → 标 new_actual（不触发口径告警）
+- 极端值判断：|YoY|>500% 且上期≥10 → 标 extreme_value（触发疑似口径告警）
+- Top5 推高/压低排序
+- 日趋势数组生成（7日，含本期+对比期）
+
+# 第二层：你（LLM）的工作范围
+
+接收 anomaly_calc 输出的 JSON 后，你只做以下三件事：
+
+## 1. 生成综合文字结论（必须输出）
+严格依据 JSON 中的数字写结论，格式如下：
+"{本期} {业务名} 万服 {overall.current}，同比{上升/下降} {overall.yoy}（绝对差 {overall.delta}）。
+主要推高因素为 {dim.top_up[0].name}，贡献 {dim.top_up[0].contrib_wanfu}；
+主要压低因素为 {dim.top_down[0].name}，拖累 {dim.top_down[0].contrib_wanfu}。"
+
+## 2. 解读告警项
+对 JSON 中 alerts 数组里每条 alert，用一句人话说明含义和处置建议：
+- new_category："本期新增了XX事件分类，可能导致数据虚高，建议排除后分析"
+- near_zero_growth（new_actual）："XX 去年基数极小，本期出现实际业务，属正常增长，非口径问题"
+- extreme_value："XX 变化幅度过大（YoY±XXX%），疑似口径或分类调整，建议人工核查"
+
+## 3. 标注不可用维度
+对 dimension_availability 中 available=false 的维度，统一说明：
+"进线渠道维度当前数据集暂不支持查询，报告中该模块将展示数据缺失提示。"
+
+# 禁止行为（严格执行）- 禁止自行计算任何数值（YoY%、贡献度%、绝对变化量等）
+- 禁止修改 anomaly_calc 输出的数字
+- 禁止对 available=false 的维度编造或推测数据
+- 禁止将 new_actual 标签（近零增长）判断为口径异常
+- 禁止省略任何 tag=up_major 或 down_major 的维度项

@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoC 体验异动分析 Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #E8372A;
+            --secondary: #4A90D9;
+            --warning: #F5A623;
+            --bg-light: #F5F5F5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f3f4f6; }
+        .tab-active { border-bottom: 2px solid var(--primary); color: var(--primary); }
+        .progress-bar { height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden; }
+        .progress-fill-up { background: linear-gradient(90deg, #fecaca, #f87171); }
+        .progress-fill-down { background: linear-gradient(90deg, #bfdbfe, #60a5fa); }
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .gradient-border { background: linear-gradient(135deg, #fef2f2, #fff7ed); border-left: 4px solid var(--primary); }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        .typing-effect { overflow: hidden; white-space: nowrap; animation: typing 2s steps(40, end); }
+        .thinking-bubble { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-left: 4px solid #3b82f6; position: relative; }
+        .thinking-bubble::before { content: ''; position: absolute; left: -8px; top: 12px; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 8px solid #3b82f6; }
+        .metric-card { min-height: 132px; display: flex; flex-direction: column; justify-content: space-between; }
+        .metric-label { color: #6b7280; font-size: 0.95rem; line-height: 1.35; white-space: nowrap; }
+        .metric-value { line-height: 1; white-space: nowrap; }
+        .report-summary-card { background: linear-gradient(135deg, #fff7f7, #fffaf7); }
+        .report-markdown { color: #374151; font-size: 15px; line-height: 1.8; }
+        .report-markdown h3 { margin: 1.25rem 0 0.55rem; font-size: 1.05rem; font-weight: 700; color: #111827; }
+        .report-markdown h4 { margin: 1rem 0 0.45rem; font-size: 0.98rem; font-weight: 700; color: #1f2937; }
+        .report-markdown p { margin: 0.55rem 0; }
+        .report-markdown strong { color: #111827; font-weight: 700; }
+        .report-markdown ul { margin: 0.5rem 0 0.75rem; padding-left: 1.2rem; list-style: disc; }
+        .report-markdown li { margin: 0.25rem 0; }
+        .report-markdown hr { margin: 1rem 0; border: 0; border-top: 1px solid #fee2e2; }
+        .report-markdown table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: #fff; }
+        .report-markdown th { background: #f9fafb; color: #4b5563; font-weight: 600; }
+        .report-markdown th, .report-markdown td { border-bottom: 1px solid #f3f4f6; padding: 0.55rem 0.65rem; text-align: left; vertical-align: top; }
+        .report-markdown tr:last-child td { border-bottom: 0; }
+        .report-table-wrap { margin: 0.75rem 0 1rem; overflow-x: auto; border: 1px solid #f3f4f6; border-radius: 0.75rem; }
+        .chat-report-bubble { max-width: min(760px, 92%); }
+        .chat-report-bubble .report-markdown { font-size: 14px; line-height: 1.75; }
+        .chat-report-bubble .report-markdown h3 { margin-top: 0.75rem; }
+        .chat-report-bubble .report-markdown table { min-width: 520px; }
+        @media (max-width: 640px) {
+            .metric-label { white-space: normal; }
+            .metric-value { font-size: 1.85rem; }
+            .chat-report-bubble { max-width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <span class="font-bold text-lg text-gray-800">VoC 体验异动分析 Agent</span>
+                    </div>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-red-600 font-medium">模拟作品集 Demo</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showTaskModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        定时任务
+                    </button>
+                    <button onclick="showLogModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        执行日志
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- 标签页导航 -->
+        <div class="bg-white rounded-t-xl border-b border-gray-200">
+            <nav class="flex space-x-8 px-6" id="tabNav">
+                <button onclick="switchTab('chat')" class="tab-btn tab-active py-4 px-2 text-sm font-medium text-gray-900 border-b-2 border-transparent hover:text-red-600 transition" data-tab="chat">
+                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    对话分析
+                </button>
+                <button onclick="switchTab('report')" class="tab-btn py-4 px-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-red-600 transition" data-tab="report">
+                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    报告展示
+                </button>
+            </nav>
+        </div>
+
+        <!-- 对话分析页面 -->
+        <div id="chatPanel" class="bg-white rounded-b-xl card-shadow min-h-[600px]">
+            <!-- 对话区域 -->
+            <div class="flex h-[600px]">
+                <!-- 左侧：对话区 -->
+                <div class="flex-1 flex flex-col border-r border-gray-200">
+                    <!-- 欢迎语 -->
+                    <div id="welcomeArea" class="flex-1 flex items-center justify-center p-8">
+                        <div class="text-center max-w-md">
+                            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">VoC 体验异动分析 Agent</h2>
+                            <p class="text-gray-500 mb-6">基于VoC回声系统的智能体验分析助手，自动完成数据查询、指标计算、报告生成全流程</p>
+                            <div class="space-y-2 text-sm text-left bg-gray-50 rounded-lg p-4">
+                                <p class="text-gray-600"><span class="text-red-600 font-medium">试试说：</span>"生成到餐客服上周周报"</p>
+                                <p class="text-gray-600"><span class="text-red-600 font-medium">试试说：</span>"分析闪购客服本月数据"</p>
+                                <p class="text-gray-600"><span class="text-red-600 font-medium">试试说：</span>"每周一9点生成企客业务周报"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 消息列表 -->
+                    <div id="messageList" class="flex-1 overflow-y-auto p-6 space-y-4 hidden"></div>
+
+                    <!-- 加载状态 -->
+                    <div id="loadingArea" class="flex-1 flex items-center justify-center hidden">
+                        <div class="text-center">
+                            <div class="inline-flex items-center space-x-2 text-gray-500">
+                                <span class="animate-pulse-dot">●</span>
+                                <span id="loadingText">正在查询数据，请稍候...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入区 -->
+                    <div class="border-t border-gray-200 p-4">
+                        <div class="flex space-x-3">
+                            <input type="text" id="chatInput" placeholder="输入分析指令，如：生成到餐客服上周周报" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition" onkeypress="handleKeyPress(event)">
+                            <button onclick="sendMessage()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                                发送
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：快捷操作 -->
+                <div class="w-72 p-4 bg-gray-50">
+                    <h3 class="font-medium text-gray-700 mb-4">快捷操作</h3>
+                    <div class="space-y-3">
+                        <button onclick="quickAction('到餐客服', '上周')" class="w-full text-left px-4 py-3 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 transition">
+                            <div class="font-medium text-gray-800">到餐客服 - 上周</div>
+                            <div class="text-xs text-gray-500">生成到餐业务上周周报</div>
+                        </button>
+                        <button onclick="quickAction('闪购客服', '上周')" class="w-full text-left px-4 py-3 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 transition">
+                            <div class="font-medium text-gray-800">闪购客服 - 上周</div>
+                            <div class="text-xs text-gray-500">生成闪购业务上周周报</div>
+                        </button>
+                        <button onclick="quickAction('企客业务', '上周')" class="w-full text-left px-4 py-3 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 transition">
+                            <div class="font-medium text-gray-800">企客业务 - 上周</div>
+                            <div class="text-xs text-gray-500">生成企客业务上周周报</div>
+                        </button>
+                    </div>
+
+                    <h3 class="font-medium text-gray-700 mt-6 mb-4">最近任务</h3>
+                    <div id="recentTasks" class="space-y-2">
+                        <div class="px-3 py-2 bg-white rounded border border-gray-200 text-sm">
+                            <div class="text-gray-700">到餐客服周报</div>
+                            <div class="text-xs text-gray-400">2026-03-23 09:00</div>
+                        </div>
+                        <div class="px-3 py-2 bg-white rounded border border-gray-200 text-sm">
+                            <div class="text-gray-700">闪购客服周报</div>
+                            <div class="text-xs text-gray-400">2026-03-23 09:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报告展示页面 -->
+        <div id="reportPanel" class="bg-white rounded-b-xl card-shadow min-h-[600px] hidden">
+            <!-- 报告头部 -->
+            <div class="border-b border-gray-200 p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-bold text-red-600">到餐客服 体验异动分析周报</h1>
+                        <p class="text-gray-500 mt-1">2026W12 vs 2025W12 | 2026-03-16 ~ 2026-03-22</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">报告生成时间</div>
+                        <div class="text-gray-700">2026-03-23 10:30:45</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心指标卡片 -->
+            <div class="p-5 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-orange-50">
+                <div id="metricCards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
+                    <div class="metric-card bg-white rounded-xl p-5 card-shadow">
+                        <div class="metric-label mb-2">本期人工万服</div>
+                        <div class="metric-value text-3xl font-bold text-gray-800">12.50</div>
+                        <div class="text-xs text-gray-400 mt-1">2026W12</div>
+                    </div>
+                    <div class="metric-card bg-white rounded-xl p-5 card-shadow">
+                        <div class="metric-label mb-2">去年同期万服</div>
+                        <div class="metric-value text-3xl font-bold text-gray-600">11.80</div>
+                        <div class="text-xs text-gray-400 mt-1">2025W12</div>
+                    </div>
+                    <div class="metric-card bg-white rounded-xl p-5 card-shadow">
+                        <div class="metric-label mb-2">万服同比</div>
+                        <div class="metric-value text-3xl font-bold text-gray-700">--</div>
+                        <div class="text-xs text-gray-400 mt-1">等待生成</div>
+                    </div>
+                    <div class="metric-card bg-white rounded-xl p-5 card-shadow">
+                        <div class="metric-label mb-2">服务量变化</div>
+                        <div class="metric-value text-3xl font-bold text-gray-800">--</div>
+                        <div class="text-xs text-gray-400 mt-1">等待生成</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 综合分析 -->
+            <div class="p-5 lg:p-6 border-b border-gray-200">
+                <div class="report-summary-card gradient-border rounded-xl p-5 lg:p-6">
+                    <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        综合分析
+                    </h3>
+                    <div id="reportSummary" class="report-markdown">
+                        本报告基于模拟数据生成。请先在对话框输入“生成到餐客服上周周报”，系统将自动更新核心指标、主要关联因素和维度明细。
+                    </div>
+                    <div id="factorCards" class="mt-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <div class="bg-red-50 rounded-lg p-3">
+                            <div class="text-red-600 font-medium text-sm mb-1">▲ 推高关联因素</div>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• 二线城市（城市等级）：上升 6.41%（+1,533次）</li>
+                                <li>• 配送问题（事件类别）：上升 10.42%（+778次）</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-3">
+                            <div class="text-blue-600 font-medium text-sm mb-1">▼ 压低关联因素</div>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• 五线城市（城市等级）：下降 1.01%（-189次）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日万服趋势图 -->
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">日万服趋势</h3>
+                <div id="dailyTrendChart" class="w-full h-64"></div>
+            </div>
+
+            <!-- 维度Tab分析 -->
+            <div class="p-6">
+                <div class="flex space-x-4 border-b border-gray-200 mb-6">
+                    <button onclick="switchDimTab('city')" class="dim-tab py-2 px-4 text-sm font-medium text-red-600 border-b-2 border-red-600" data-dim="city">城市等级</button>
+                    <button onclick="switchDimTab('category')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="category">品类</button>
+                    <button onclick="switchDimTab('event')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="event">事件类别</button>
+                    <button onclick="switchDimTab('channel')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="channel">进线渠道</button>
+                    <button onclick="switchDimTab('zone')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="zone">战区</button>
+                </div>
+
+                <!-- 城市等级维度 -->
+                <div id="dim_city" class="dim-content">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-left text-gray-500 border-b">
+                                        <th class="pb-2 font-medium">城市等级</th>
+                                        <th class="pb-2 font-medium text-right">本期服务量</th>
+                                        <th class="pb-2 font-medium text-right">去年同期</th>
+                                        <th class="pb-2 font-medium text-right">变化量</th>
+                                        <th class="pb-2 font-medium text-right">万服同比</th>
+                                    <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-100 bg-red-50">
+                                        <td class="py-2 font-medium text-red-600">▲ 二线城市</td>
+                                        <td class="py-2 text-right">18,456</td>
+                                        <td class="py-2 text-right">16,923</td>
+                                        <td class="py-2 text-right text-red-600">+1,533</td>
+                                        <td class="py-2 text-right text-red-600">+6.41%</td>
+                                        <td class="py-2 text-right text-red-600 font-medium">+2.16</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100">
+                                        <td class="py-2">一线城市</td>
+                                        <td class="py-2 text-right">15,234</td>
+                                        <td class="py-2 text-right">13,856</td>
+                                        <td class="py-2 text-right text-red-600">+1,378</td>
+                                        <td class="py-2 text-right text-red-600">+5.52%</td>
+                                        <td class="py-2 text-right text-red-600">+2.84</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100">
+                                        <td class="py-2">三线城市</td>
+                                        <td class="py-2 text-right">9,823</td>
+                                        <td class="py-2 text-right">9,234</td>
+                                        <td class="py-2 text-right text-red-600">+589</td>
+                                        <td class="py-2 text-right text-red-600">+1.81%</td>
+                                        <td class="py-2 text-right text-red-600">+0.62</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100">
+                                        <td class="py-2">四线城市</td>
+                                        <td class="py-2 text-right">4,567</td>
+                                        <td class="py-2 text-right">4,123</td>
+                                        <td class="py-2 text-right text-red-600">+444</td>
+                                        <td class="py-2 text-right text-red-600">+5.56%</td>
+                                        <td class="py-2 text-right text-red-600">+0.21</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 bg-blue-50">
+                                        <td class="py-2 text-blue-600">▼ 五线城市</td>
+                                        <td class="py-2 text-right">2,345</td>
+                                        <td class="py-2 text-right">2,156</td>
+                                        <td class="py-2 text-right text-blue-600">-189</td>
+                                        <td class="py-2 text-right text-blue-600">-1.01%</td>
+                                        <td class="py-2 text-right text-blue-600">-0.02</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <h4 class="font-medium text-gray-700 mb-3">整体分析</h4>
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <div class="text-gray-500">整体万服同比</div>
+                                    <div id="overallYoySummary" class="text-lg font-bold text-gray-700">--</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">增速最快（推高）</div>
+                                    <div id="fastestUpName" class="font-medium">--</div>
+                                    <div id="fastestUpValue" class="text-red-600">--</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">变化占比最高（推高）</div>
+                                    <div id="topUpRatioName" class="font-medium">--</div>
+                                    <div id="topUpRatioValue" class="text-red-600">--</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">压低最大</div>
+                                    <div id="topDownRatioName" class="font-medium text-blue-600">--</div>
+                                    <div id="topDownRatioValue" class="text-blue-600">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 品类维度 -->
+                <div id="dim_category" class="dim-content hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 font-medium">品类</th>
+                                <th class="pb-2 font-medium text-right">本期服务量</th>
+                                <th class="pb-2 font-medium text-right">去年同期</th>
+                                <th class="pb-2 font-medium text-right">变化量</th>
+                                <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100 bg-red-50">
+                                <td class="py-2 font-medium text-red-600">▲ 到店</td>
+                                <td class="py-2 text-right">12,345</td>
+                                <td class="py-2 text-right">11,234</td>
+                                <td class="py-2 text-right text-red-600">+1,111</td>
+                                <td class="py-2 text-right text-red-600">+4.51%</td>
+                                <td class="py-2 text-right text-red-600 font-medium">+1.61</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">外卖</td>
+                                <td class="py-2 text-right">23,456</td>
+                                <td class="py-2 text-right">21,567</td>
+                                <td class="py-2 text-right text-red-600">+1,889</td>
+                                <td class="py-2 text-right text-red-600">+4.17%</td>
+                                <td class="py-2 text-right text-red-600">+1.43</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">闪购</td>
+                                <td class="py-2 text-right">5,678</td>
+                                <td class="py-2 text-right">5,123</td>
+                                <td class="py-2 text-right text-red-600">+555</td>
+                                <td class="py-2 text-right text-red-600">+5.98%</td>
+                                <td class="py-2 text-right text-red-600">+1.04</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">酒旅</td>
+                                <td class="py-2 text-right">3,456</td>
+                                <td class="py-2 text-right">3,234</td>
+                                <td class="py-2 text-right text-red-600">+222</td>
+                                <td class="py-2 text-right text-red-600">+0.63%</td>
+                                <td class="py-2 text-right text-red-600">+0.24</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">优选</td>
+                                <td class="py-2 text-right">2,345</td>
+                                <td class="py-2 text-right">2,156</td>
+                                <td class="py-2 text-right text-red-600">+189</td>
+                                <td class="py-2 text-right text-red-600">+0.49%</td>
+                                <td class="py-2 text-right text-red-600">+0.16</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 事件类别维度 -->
+                <div id="dim_event" class="dim-content hidden">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center text-yellow-700">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <span class="font-medium">注意事项</span>
+                        </div>
+                        <ul class="mt-2 text-sm text-yellow-600 space-y-1">
+                            <li>• "新增分类-会员服务"为本期新增事件分类，可能导致数据虚高</li>
+                            <li>• "新增分类-会员服务"N/A%疑为标注规则调整，建议排除后分析真实趋势</li>
+                        </ul>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 font-medium">事件类别</th>
+                                <th class="pb-2 font-medium text-right">本期服务量</th>
+                                <th class="pb-2 font-medium text-right">去年同期</th>
+                                <th class="pb-2 font-medium text-right">变化量</th>
+                                <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100 bg-red-50">
+                                <td class="py-2 font-medium text-red-600">▲ 支付问题</td>
+                                <td class="py-2 text-right">567</td>
+                                <td class="py-2 text-right">456</td>
+                                <td class="py-2 text-right text-red-600">+111</td>
+                                <td class="py-2 text-right text-red-600">+12.34%</td>
+                                <td class="py-2 text-right text-red-600 font-medium">+3.69</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">退款问题</td>
+                                <td class="py-2 text-right">6,567</td>
+                                <td class="py-2 text-right">6,123</td>
+                                <td class="py-2 text-right text-red-600">+444</td>
+                                <td class="py-2 text-right text-red-600">+3.77%</td>
+                                <td class="py-2 text-right text-red-600">+1.41</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">质量问题</td>
+                                <td class="py-2 text-right">4,321</td>
+                                <td class="py-2 text-right">3,987</td>
+                                <td class="py-2 text-right text-red-600">+334</td>
+                                <td class="py-2 text-right text-red-600">+3.31%</td>
+                                <td class="py-2 text-right text-red-600">+1.21</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">账户问题</td>
+                                <td class="py-2 text-right">1,234</td>
+                                <td class="py-2 text-right">1,123</td>
+                                <td class="py-2 text-right text-red-600">+111</td>
+                                <td class="py-2 text-right text-red-600">+4.47%</td>
+                                <td class="py-2 text-right text-red-600">+1.60</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">配送问题</td>
+                                <td class="py-2 text-right">8,234</td>
+                                <td class="py-2 text-right">7,456</td>
+                                <td class="py-2 text-right text-red-600">+778</td>
+                                <td class="py-2 text-right text-red-600">+2.42%</td>
+                                <td class="py-2 text-right text-red-600">+0.87</td>
+                            </tr>
+                            <tr class="border-b border-gray-100 bg-yellow-50">
+                                <td class="py-2 text-yellow-600">★ 新增-会员服务</td>
+                                <td class="py-2 text-right">890</td>
+                                <td class="py-2 text-right">0</td>
+                                <td class="py-2 text-right">+890</td>
+                                <td class="py-2 text-right text-yellow-600">N/A</td>
+                                <td class="py-2 text-right text-yellow-600">N/A</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 进线渠道维度 -->
+                <div id="dim_channel" class="dim-content hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 font-medium">进线渠道</th>
+                                <th class="pb-2 font-medium text-right">本期服务量</th>
+                                <th class="pb-2 font-medium text-right">去年同期</th>
+                                <th class="pb-2 font-medium text-right">变化量</th>
+                                <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">APP在线</td>
+                                <td class="py-2 text-right">12,345</td>
+                                <td class="py-2 text-right">11,234</td>
+                                <td class="py-2 text-right text-red-600">+1,111</td>
+                                <td class="py-2 text-right text-red-600">+4.51%</td>
+                                <td class="py-2 text-right text-red-600">+1.61</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">小程序</td>
+                                <td class="py-2 text-right">5,678</td>
+                                <td class="py-2 text-right">5,123</td>
+                                <td class="py-2 text-right text-red-600">+555</td>
+                                <td class="py-2 text-right text-red-600">+5.98%</td>
+                                <td class="py-2 text-right text-red-600">+2.08</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">电话热线</td>
+                                <td class="py-2 text-right">8,234</td>
+                                <td class="py-2 text-right">7,456</td>
+                                <td class="py-2 text-right text-red-600">+778</td>
+                                <td class="py-2 text-right text-red-600">+2.42%</td>
+                                <td class="py-2 text-right text-red-600">+0.87</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 战区维度 -->
+                <div id="dim_zone" class="dim-content hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 font-medium">战区</th>
+                                <th class="pb-2 font-medium text-right">本期服务量</th>
+                                <th class="pb-2 font-medium text-right">去年同期</th>
+                                <th class="pb-2 font-medium text-right">变化量</th>
+                                <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100 bg-red-50">
+                                <td class="py-2 font-medium text-red-600">▲ 华北战区</td>
+                                <td class="py-2 text-right">6,234</td>
+                                <td class="py-2 text-right">5,678</td>
+                                <td class="py-2 text-right text-red-600">+556</td>
+                                <td class="py-2 text-right text-red-600">+6.25%</td>
+                                <td class="py-2 text-right text-red-600 font-medium">+2.18</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">华南战区</td>
+                                <td class="py-2 text-right">7,456</td>
+                                <td class="py-2 text-right">6,823</td>
+                                <td class="py-2 text-right text-red-600">+633</td>
+                                <td class="py-2 text-right text-red-600">+4.84%</td>
+                                <td class="py-2 text-right text-red-600">+1.71</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">华东战区</td>
+                                <td class="py-2 text-right">9,234</td>
+                                <td class="py-2 text-right">8,456</td>
+                                <td class="py-2 text-right text-red-600">+778</td>
+                                <td class="py-2 text-right text-red-600">+4.22%</td>
+                                <td class="py-2 text-right text-red-600">+1.50</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">华中战区</td>
+                                <td class="py-2 text-right">4,567</td>
+                                <td class="py-2 text-right">4,234</td>
+                                <td class="py-2 text-right text-red-600">+333</td>
+                                <td class="py-2 text-right text-red-600">+3.22%</td>
+                                <td class="py-2 text-right text-red-600">+1.14</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2">西南战区</td>
+                                <td class="py-2 text-right">3,456</td>
+                                <td class="py-2 text-right">3,234</td>
+                                <td class="py-2 text-right text-red-600">+222</td>
+                                <td class="py-2 text-right text-red-600">+0.63%</td>
+                                <td class="py-2 text-right text-red-600">+0.24</td>
+                            </tr>
+                            <tr class="border-b border-gray-100 bg-blue-50">
+                                <td class="py-2 text-blue-600">▼ 西北战区</td>
+                                <td class="py-2 text-right">2,345</td>
+                                <td class="py-2 text-right">2,156</td>
+                                <td class="py-2 text-right text-blue-600">-189</td>
+                                <td class="py-2 text-right text-blue-600">-1.01%</td>
+                                <td class="py-2 text-right text-blue-600">-0.02</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 定时任务模态框 -->
+    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden animate-slide-up">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">定时任务管理</h3>
+                <button onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <!-- 新建任务 -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">创建新任务</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">业务名称</label>
+                            <select id="taskBusiness" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <option value="到餐客服">到餐客服</option>
+                                <option value="闪购客服">闪购客服</option>
+                                <option value="企客业务">企客业务</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">触发时间</label>
+                            <select id="taskTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <option value="0 9 * * 1">每周一 09:00</option>
+                                <option value="0 9 * * 2">每周二 09:00</option>
+                                <option value="0 9 * * 3">每周三 09:00</option>
+                                <option value="0 9 * * 4">每周四 09:00</option>
+                                <option value="0 9 * * 5">每周五 09:00</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="createTask()" class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+                        创建任务
+                    </button>
+                </div>
+
+                <!-- 任务列表 -->
+                <div>
+                    <h4 class="font-medium text-gray-700 mb-3">当前定时任务</h4>
+                    <div id="taskList" class="space-y-3">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-gray-800">到餐客服 周报</div>
+                                <div class="text-sm text-gray-500">每周一 09:00 触发</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">运行中</span>
+                                <button class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">暂停</button>
+                                <button class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition">删除</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-gray-800">闪购客服 周报</div>
+                                <div class="text-sm text-gray-500">每周二 09:00 触发</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">已暂停</span>
+                                <button class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">恢复</button>
+                                <button class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 执行日志模态框 -->
+    <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl w-full max-w-3xl max-h-[80vh] overflow-hidden animate-slide-up">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">执行日志</h3>
+                <button onclick="closeLogModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="logList" class="space-y-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-800">到餐客服周报生成</span>
+                            <span class="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">成功</span>
+                        </div>
+                        <div class="text-sm text-gray-500 space-y-1">
+                            <div>开始时间：2026-03-23 09:00:12</div>
+                            <div>结束时间：2026-03-23 09:02:45</div>
+                            <div>执行耗时：2分33秒</div>
+                        </div>
+                        <div class="mt-3 text-sm">
+                            <div class="text-gray-600 mb-1">执行步骤：</div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>数据查询完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>指标计算完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>报告生成完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>CDN上传完成</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-800">闪购客服周报生成</span>
+                            <span class="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">成功</span>
+                        </div>
+                        <div class="text-sm text-gray-500 space-y-1">
+                            <div>开始时间：2026-03-23 09:00:48</div>
+                            <div>结束时间：2026-03-23 09:03:12</div>
+                            <div>执行耗时：2分24秒</div>
+                        </div>
+                        <div class="mt-3 text-sm">
+                            <div class="text-gray-600 mb-1">执行步骤：</div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>数据查询完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>指标计算完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>报告生成完成</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>CDN上传完成</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 bg-gray-800 text-white rounded-lg shadow-lg hidden animate-slide-up">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        // API配置
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // 当前报告数据
+        let currentReportData = null;
+
+        // Tab切换
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('text-gray-500');
+            });
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('tab-active');
+            document.querySelector(`[data-tab="${tab}"]`).classList.remove('text-gray-500');
+
+            if (tab === 'chat') {
+                document.getElementById('chatPanel').classList.remove('hidden');
+                document.getElementById('reportPanel').classList.add('hidden');
+            } else {
+                document.getElementById('chatPanel').classList.add('hidden');
+                document.getElementById('reportPanel').classList.remove('hidden');
+                initCharts();
+                if (currentReportData) {
+                    renderReport(currentReportData);
+                }
+                resizeDailyChartSoon();
+            }
+        }
+
+        // 维度Tab切换
+        function switchDimTab(dim) {
+            document.querySelectorAll('.dim-tab').forEach(btn => {
+                btn.classList.remove('text-red-600', 'border-b-2', 'border-red-600');
+                btn.classList.add('text-gray-500');
+            });
+            document.querySelector(`[data-dim="${dim}"]`).classList.add('text-red-600', 'border-b-2', 'border-red-600');
+            document.querySelector(`[data-dim="${dim}"]`).classList.remove('text-gray-500');
+
+            document.querySelectorAll('.dim-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`dim_${dim}`).classList.remove('hidden');
+        }
+
+        // 发送消息 - 使用真实API
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            input.value = '';
+
+            // 显示加载状态
+            document.getElementById('welcomeArea').classList.add('hidden');
+            document.getElementById('loadingArea').classList.remove('hidden');
+            document.getElementById('loadingText').textContent = '正在连接Agent...';
+
+            try {
+                // 使用流式API
+                await streamChat(message);
+            } catch (error) {
+                console.error('API调用失败:', error);
+                document.getElementById('loadingArea').classList.add('hidden');
+                addMessage('抱歉，服务暂时不可用。请检查后端服务是否启动。', 'ai');
+            }
+        }
+
+        // 流式对话
+        async function streamChat(message) {
+            const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: []
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('API请求失败');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        handleStreamData(data);
+                    }
+                }
+            }
+        }
+
+        // 处理流式数据
+        function handleStreamData(data) {
+            switch (data.type) {
+                case 'step':
+                    handleStep(data.data);
+                    break;
+                case 'thinking':
+                    handleThinking(data.data);
+                    break;
+                case 'text':
+                    handleText(data.data);
+                    break;
+                case 'report':
+                    handleReport(data.data);
+                    break;
+                case 'done':
+                    handleDone(data.data);
+                    break;
+                case 'error':
+                    handleError(data.data);
+                    break;
+            }
+        }
+
+        // 处理步骤
+        function handleStep(stepData) {
+            const loadingText = document.getElementById('loadingText');
+            if (stepData.status === 'running') {
+                loadingText.textContent = stepData.message;
+            } else if (stepData.status === 'completed') {
+                loadingText.textContent = stepData.message + ' ✓';
+            }
+        }
+
+        // 处理思考内容
+        function handleThinking(thinkingData) {
+            const messageList = document.getElementById('messageList');
+            messageList.classList.remove('hidden');
+            document.getElementById('welcomeArea').classList.add('hidden');
+
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'flex justify-start animate-slide-up mb-2';
+            
+            const stepNames = {
+                'intent_recognition': '意图识别',
+                'data_query': '数据查询',
+                'anomaly_calc': '异动计算',
+                'report_generation': '报告生成'
+            };
+            
+            const stepName = stepNames[thinkingData.step] || thinkingData.step;
+
+            thinkingDiv.innerHTML = `
+                <div class="max-w-md w-full">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${stepName}</span>
+                    </div>
+                    <div class="thinking-bubble px-4 py-3 rounded-lg rounded-bl-none text-sm text-gray-700">
+                        ${thinkingData.content}
+                    </div>
+                </div>
+            `;
+
+            messageList.appendChild(thinkingDiv);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // 处理文本
+        function handleText(text) {
+            const messageList = document.getElementById('messageList');
+            messageList.classList.remove('hidden');
+            document.getElementById('welcomeArea').classList.add('hidden');
+
+            let textMessage = document.getElementById('streamingText');
+            if (!textMessage) {
+                textMessage = document.createElement('div');
+                textMessage.id = 'streamingText';
+                textMessage.className = 'flex justify-start animate-slide-up';
+                textMessage.dataset.rawMarkdown = '';
+                textMessage.innerHTML = `
+                    <div class="chat-report-bubble px-5 py-4 bg-gray-100 text-gray-800 rounded-lg rounded-bl-none">
+                        <div id="streamingContent" class="report-markdown"></div>
+                    </div>
+                `;
+                messageList.appendChild(textMessage);
+            }
+
+            const content = textMessage.querySelector('#streamingContent');
+            textMessage.dataset.rawMarkdown = (textMessage.dataset.rawMarkdown || '') + text;
+            content.innerHTML = renderReportMarkdown(textMessage.dataset.rawMarkdown);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // 处理报告
+        function handleReport(reportData) {
+            currentReportData = reportData;
+            document.getElementById('loadingArea').classList.add('hidden');
+            
+            const streamingText = document.getElementById('streamingText');
+            if (streamingText) {
+                streamingText.id = '';
+            }
+            
+            addMessage('报告已生成！正在切换到报告展示页面...', 'ai');
+            setTimeout(() => {
+                switchTab('report');
+            }, 500);
+        }
+
+        // 处理完成
+        function handleDone(data) {
+            console.log('分析完成:', data);
+        }
+
+        // 处理错误
+        function handleError(error) {
+            document.getElementById('loadingArea').classList.add('hidden');
+            addMessage(`分析过程中出现错误: ${error}`, 'ai');
+        }
+
+        // 添加消息
+        function addMessage(text, type) {
+            const messageList = document.getElementById('messageList');
+            messageList.classList.remove('hidden');
+            document.getElementById('welcomeArea').classList.add('hidden');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`;
+
+            if (type === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="max-w-xs px-4 py-2 bg-red-600 text-white rounded-lg rounded-br-none">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="max-w-md px-4 py-2 bg-gray-100 text-gray-800 rounded-lg rounded-bl-none">
+                        ${text}
+                    </div>
+                `;
+            }
+
+            messageList.appendChild(messageDiv);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // 快捷操作
+        function quickAction(business, period) {
+            const input = document.getElementById('chatInput');
+            input.value = `生成${business}${period}周报`;
+            sendMessage();
+        }
+
+        // 回车发送
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 定时任务模态框
+        function showTaskModal() {
+            document.getElementById('taskModal').classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.add('hidden');
+        }
+
+        // 执行日志模态框
+        function showLogModal() {
+            document.getElementById('logModal').classList.remove('hidden');
+        }
+
+        function closeLogModal() {
+            document.getElementById('logModal').classList.add('hidden');
+        }
+
+        // 创建任务
+        function createTask() {
+            const business = document.getElementById('taskBusiness').value;
+            const time = document.getElementById('taskTime').value;
+            showToast(`定时任务创建成功！${business}周报已设置`);
+            closeTaskModal();
+        }
+
+        // Toast提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function formatServiceChangeRatio(value) {
+            const ratio = Number(value || 0);
+            const sign = ratio > 0 ? '+' : '';
+            return `${sign}${(ratio * 100).toFixed(2)}%`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatInlineMarkdown(text) {
+            return escapeHtml(text)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-gray-100 rounded text-xs">$1</code>');
+        }
+
+        function isMarkdownTableSeparator(line) {
+            return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+        }
+
+        function splitMarkdownTableRow(line) {
+            return line.trim()
+                .replace(/^\|/, '')
+                .replace(/\|$/, '')
+                .split('|')
+                .map(cell => formatInlineMarkdown(cell.trim()));
+        }
+
+        function renderReportMarkdown(markdown) {
+            const source = String(markdown || '')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/\*\*\*\s+(#{1,6}\s+)/g, '$1')
+                .replace(/---\s+(#{1,6}\s+)/g, '\n---\n$1')
+                .replace(/\r\n/g, '\n');
+            const lines = source.split('\n');
+            const html = [];
+            let listOpen = false;
+
+            const closeList = () => {
+                if (listOpen) {
+                    html.push('</ul>');
+                    listOpen = false;
+                }
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const raw = lines[i].trim();
+                if (!raw) {
+                    closeList();
+                    continue;
+                }
+
+                if (/^(-{3,}|\*{3,})$/.test(raw)) {
+                    closeList();
+                    html.push('<hr>');
+                    continue;
+                }
+
+                if (raw.includes('|') && lines[i + 1] && isMarkdownTableSeparator(lines[i + 1])) {
+                    closeList();
+                    const headers = splitMarkdownTableRow(raw);
+                    i += 2;
+                    const rows = [];
+                    while (i < lines.length && lines[i].trim().includes('|')) {
+                        rows.push(splitMarkdownTableRow(lines[i].trim()));
+                        i++;
+                    }
+                    i--;
+
+                    html.push('<div class="report-table-wrap"><table>');
+                    html.push(`<thead><tr>${headers.map(cell => `<th>${cell}</th>`).join('')}</tr></thead>`);
+                    html.push('<tbody>');
+                    rows.forEach(row => {
+                        html.push(`<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`);
+                    });
+                    html.push('</tbody></table></div>');
+                    continue;
+                }
+
+                const heading = raw.match(/^(#{1,6})\s+(.+)$/);
+                if (heading) {
+                    closeList();
+                    const level = heading[1].length <= 3 ? 'h3' : 'h4';
+                    html.push(`<${level}>${formatInlineMarkdown(heading[2])}</${level}>`);
+                    continue;
+                }
+
+                const listItem = raw.match(/^[-*]\s+(.+)$/);
+                if (listItem) {
+                    if (!listOpen) {
+                        html.push('<ul>');
+                        listOpen = true;
+                    }
+                    html.push(`<li>${formatInlineMarkdown(listItem[1])}</li>`);
+                    continue;
+                }
+
+                closeList();
+                html.push(`<p>${formatInlineMarkdown(raw)}</p>`);
+            }
+
+            closeList();
+            return html.join('');
+        }
+
+        // 渲染报告数据
+        function renderReport(report) {
+            // 更新报告头部
+            const header = document.querySelector('#reportPanel .border-b');
+            header.querySelector('h1').textContent = `${report.business} 体验异动分析周报`;
+            header.querySelector('p').textContent = `${report.date_range}${report.data_note ? ' · ' + report.data_note : ''}`;
+
+            // 更新核心指标卡片
+            const cards = document.querySelectorAll('#metricCards .metric-card');
+            if (cards.length >= 4) {
+                cards[0].querySelector('.text-3xl').textContent = report.current_wanfu.toFixed(2);
+                cards[0].querySelector('.text-xs').textContent = report.date_range ? report.date_range.split(' vs ')[0] : '本期';
+                cards[1].querySelector('.text-3xl').textContent = report.compare_wanfu.toFixed(2);
+                cards[1].querySelector('.text-xs').textContent = report.date_range && report.date_range.includes(' vs ') ? report.date_range.split(' vs ')[1].split(' · ')[0] : '对比期';
+                cards[2].querySelector('.text-3xl').textContent = `${report.yoy > 0 ? '+' : ''}${report.yoy.toFixed(2)}%`;
+                cards[2].querySelector('.text-3xl').className = `metric-value text-3xl font-bold ${report.yoy > 0 ? 'text-red-600' : 'text-blue-600'}`;
+                cards[2].querySelector('.text-xs').textContent = report.yoy > 0 ? '▲ 上升' : (report.yoy < 0 ? '▼ 下降' : '持平');
+                cards[3].querySelector('.text-3xl').textContent = `${report.service_yoy > 0 ? '+' : ''}${report.service_yoy.toFixed(1)}%`;
+                cards[3].querySelector('.text-xs').textContent = `服务量 ${Number(report.service_count || 0).toLocaleString()}`;
+            }
+
+            // 更新综合分析
+            const summaryDiv = document.querySelector('#reportSummary');
+            if (summaryDiv && report.summary) {
+                summaryDiv.innerHTML = renderReportMarkdown(report.summary);
+            }
+
+            // 更新推高/压低因素
+            const factorsDiv = document.querySelector('#factorCards');
+            if (factorsDiv && report.top_up_factors) {
+                const upList = factorsDiv.querySelector('.bg-red-50 ul');
+                const downList = factorsDiv.querySelector('.bg-blue-50 ul');
+                
+                if (upList) {
+                    upList.innerHTML = report.top_up_factors.map(f => 
+                        `<li>• ${f.name}（${f.dim_type}）：上升 ${f.yoy.toFixed(2)}%，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
+                    ).join('');
+                }
+                
+                if (downList) {
+                    downList.innerHTML = report.top_down_factors.map(f => 
+                        `<li>• ${f.name}（${f.dim_type}）：下降 ${f.yoy.toFixed(2)}%，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
+                    ).join('');
+                }
+            }
+
+            // 更新维度数据表格
+            renderDimensionTables(report.dimensions);
+            updateInsightSummary(report);
+
+            // 更新日趋势图表数据
+            if (report.daily_trend) {
+                updateChart(report.daily_trend);
+            }
+        }
+
+        function updateInsightSummary(report) {
+            const topUp = report.top_up_factors || [];
+            const topDown = report.top_down_factors || [];
+            const fastestUp = topUp.reduce((best, item) => (!best || item.yoy > best.yoy ? item : best), null);
+            const topUpRatio = topUp[0];
+            const topDownRatio = topDown[0];
+
+            const overall = document.getElementById('overallYoySummary');
+            if (overall) {
+                overall.textContent = `${report.yoy > 0 ? '+' : ''}${report.yoy.toFixed(2)}%`;
+                overall.className = `text-lg font-bold ${report.yoy > 0 ? 'text-red-600' : (report.yoy < 0 ? 'text-blue-600' : 'text-gray-700')}`;
+            }
+
+            const fastestUpName = document.getElementById('fastestUpName');
+            const fastestUpValue = document.getElementById('fastestUpValue');
+            if (fastestUpName && fastestUpValue) {
+                fastestUpName.textContent = fastestUp ? fastestUp.name : '--';
+                fastestUpValue.textContent = fastestUp ? `同比 ${fastestUp.yoy > 0 ? '+' : ''}${fastestUp.yoy.toFixed(2)}%` : '--';
+            }
+
+            const topUpRatioName = document.getElementById('topUpRatioName');
+            const topUpRatioValue = document.getElementById('topUpRatioValue');
+            if (topUpRatioName && topUpRatioValue) {
+                topUpRatioName.textContent = topUpRatio ? topUpRatio.name : '--';
+                topUpRatioValue.textContent = topUpRatio ? `服务量变化占比 ${formatServiceChangeRatio(topUpRatio.service_change_ratio ?? topUpRatio.contrib_wanfu)}` : '--';
+            }
+
+            const topDownRatioName = document.getElementById('topDownRatioName');
+            const topDownRatioValue = document.getElementById('topDownRatioValue');
+            if (topDownRatioName && topDownRatioValue) {
+                topDownRatioName.textContent = topDownRatio ? topDownRatio.name : '--';
+                topDownRatioValue.textContent = topDownRatio ? `服务量变化占比 ${formatServiceChangeRatio(topDownRatio.service_change_ratio ?? topDownRatio.contrib_wanfu)}` : '--';
+            }
+        }
+
+        function formatSignedNumber(value) {
+            const num = Number(value || 0);
+            const sign = num > 0 ? '+' : '';
+            return `${sign}${num.toLocaleString()}`;
+        }
+
+        function formatSignedPercent(value) {
+            const num = Number(value || 0);
+            const sign = num > 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}%`;
+        }
+
+        function renderDimensionTable(label, items) {
+            const rows = items.map((item, index) => {
+                const yoy = Number(item.yoy || 0);
+                const isTop = index === 0 && yoy > 0;
+                const isBottom = index === items.length - 1 && yoy < 0;
+                const bgClass = isTop ? 'bg-red-50' : (isBottom ? 'bg-blue-50' : '');
+                const textClass = yoy > 0 ? 'text-red-600' : (yoy < 0 ? 'text-blue-600' : 'text-gray-700');
+                const arrow = isTop ? '▲' : (isBottom ? '▼' : '');
+                const ratio = item.service_change_ratio ?? item.contribution ?? item.contrib_wanfu;
+
+                return `
+                    <tr class="border-b border-gray-100 ${bgClass}">
+                        <td class="py-2 font-medium ${textClass}">${arrow ? arrow + ' ' : ''}${escapeHtml(item.name || '--')}</td>
+                        <td class="py-2 text-right">${Number(item.current_value || 0).toLocaleString()}</td>
+                        <td class="py-2 text-right">${Number(item.compare_value || 0).toLocaleString()}</td>
+                        <td class="py-2 text-right ${textClass}">${formatSignedNumber(item.delta)}</td>
+                        <td class="py-2 text-right ${textClass}">${formatSignedPercent(yoy)}</td>
+                        <td class="py-2 text-right ${textClass} font-medium">${formatServiceChangeRatio(ratio)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[680px]">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 font-medium">${escapeHtml(label)}</th>
+                                <th class="pb-2 font-medium text-right">本期服务量</th>
+                                <th class="pb-2 font-medium text-right">去年同期</th>
+                                <th class="pb-2 font-medium text-right">变化量</th>
+                                <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderDimensionSection(containerId, label, items, withSummary = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const list = Array.isArray(items) ? items : [];
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                        ${escapeHtml(label)}暂无可展示数据。
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHtml = renderDimensionTable(label, list);
+            if (!withSummary) {
+                container.innerHTML = tableHtml;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2">${tableHtml}</div>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-gray-700 mb-3">整体分析</h4>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <div class="text-gray-500">整体万服同比</div>
+                                <div id="overallYoySummary" class="text-lg font-bold text-gray-700">--</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">增速最快（推高）</div>
+                                <div id="fastestUpName" class="font-medium">--</div>
+                                <div id="fastestUpValue" class="text-red-600">--</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">变化占比最高（推高）</div>
+                                <div id="topUpRatioName" class="font-medium">--</div>
+                                <div id="topUpRatioValue" class="text-red-600">--</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">压低最大</div>
+                                <div id="topDownRatioName" class="font-medium text-blue-600">--</div>
+                                <div id="topDownRatioValue" class="text-blue-600">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染维度表格
+        function renderDimensionTables(dimensions = {}) {
+            renderDimensionSection('dim_city', '城市等级', dimensions['城市等级'], true);
+            renderDimensionSection('dim_category', '品类', dimensions['品类']);
+            renderDimensionSection('dim_event', '事件类别', dimensions['事件类别']);
+            renderDimensionSection('dim_channel', '进线渠道', dimensions['进线渠道']);
+            renderDimensionSection('dim_zone', '战区', dimensions['战区']);
+        }
+
+        // 初始化图表
+        let dailyChart = null;
+        let dailyChartResizeBound = false;
+
+        function calculateChartBounds(currentSeries, compareSeries) {
+            const values = [...currentSeries, ...compareSeries]
+                .map(value => Number(value))
+                .filter(value => Number.isFinite(value));
+
+            const axisBase = {
+                type: 'value',
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#f3f4f6' } },
+                axisLabel: { color: '#6b7280' }
+            };
+
+            if (values.length === 0) {
+                return axisBase;
+            }
+
+            const minValue = Math.min(...values);
+            const maxValue = Math.max(...values);
+            const range = Math.max(maxValue - minValue, 1);
+            const padding = Math.max(range * 0.18, maxValue >= 100 ? 2 : 0.5);
+
+            return {
+                ...axisBase,
+                min: Math.max(0, Math.floor((minValue - padding) * 100) / 100),
+                max: Math.ceil((maxValue + padding) * 100) / 100
+            };
+        }
+
+        function resizeDailyChartSoon() {
+            if (!dailyChart) return;
+            requestAnimationFrame(() => {
+                dailyChart.resize();
+                setTimeout(() => dailyChart && dailyChart.resize(), 50);
+            });
+        }
+
+        function buildDailyChartOption(categories, currentSeries, compareSeries) {
+            return {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#e5e7eb',
+                    textStyle: { color: '#374151' }
+                },
+                legend: {
+                    data: ['本期万服', '去年同期'],
+                    bottom: 0
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: categories,
+                    axisLine: { lineStyle: { color: '#e5e7eb' } },
+                    axisLabel: { color: '#6b7280' }
+                },
+                yAxis: calculateChartBounds(currentSeries, compareSeries),
+                series: [
+                    {
+                        name: '本期万服',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        data: currentSeries,
+                        lineStyle: { color: '#E8372A', width: 3 },
+                        itemStyle: { color: '#E8372A' },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(232,55,42,0.3)' },
+                                { offset: 1, color: 'rgba(232,55,42,0.05)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: '去年同期',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        data: compareSeries,
+                        lineStyle: { color: '#4A90D9', width: 3, type: 'dashed' },
+                        itemStyle: { color: '#4A90D9' }
+                    }
+                ]
+            };
+        }
+
+        function initCharts() {
+            const chartEl = document.getElementById('dailyTrendChart');
+            if (!chartEl || chartEl.offsetWidth === 0 || chartEl.offsetHeight === 0) {
+                return null;
+            }
+
+            if (dailyChart) {
+                resizeDailyChartSoon();
+                return dailyChart;
+            }
+
+            dailyChart = echarts.getInstanceByDom(chartEl) || echarts.init(chartEl);
+            const categories = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const currentSeries = [12.35, 12.68, 12.85, 12.72, 12.58, 12.45, 12.55];
+            const compareSeries = [11.20, 11.45, 11.68, 11.52, 11.38, 11.25, 11.32];
+            dailyChart.setOption(buildDailyChartOption(categories, currentSeries, compareSeries));
+
+            if (!dailyChartResizeBound) {
+                window.addEventListener('resize', resizeDailyChartSoon);
+                dailyChartResizeBound = true;
+            }
+
+            resizeDailyChartSoon();
+            return dailyChart;
+        }
+
+        function ensureDailyChart() {
+            return initCharts();
+        }
+
+        // 更新图表数据
+        function updateChart(dailyTrend) {
+            ensureDailyChart();
+            if (dailyChart && Array.isArray(dailyTrend) && dailyTrend.length > 0) {
+                const categories = dailyTrend.map(d => d.date);
+                const currentSeries = dailyTrend.map(d => Number(d.current_wanfu || 0));
+                const compareSeries = dailyTrend.map(d => Number(d.compare_wanfu || 0));
+
+                dailyChart.setOption({
+                    xAxis: {
+                        data: categories
+                    },
+                    yAxis: calculateChartBounds(currentSeries, compareSeries),
+                    series: [
+                        {
+                            data: currentSeries
+                        },
+                        {
+                            data: compareSeries
+                        }
+                    ]
+                });
+                resizeDailyChartSoon();
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 检查API连接
+            fetch(`${API_BASE_URL}/health`)
+                .then(res => res.json())
+                .then(data => console.log('API连接成功:', data))
+                .catch(err => console.warn('API连接失败，请确保后端服务已启动:', err));
+        });
+    </script>
+</body>
+</html>
