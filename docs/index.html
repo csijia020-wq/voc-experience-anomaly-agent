@@ -494,1067 +494,12 @@
     </div>
 
     <script>
-        const STATIC_REPORT_DATA = {
-          "business": "到餐客服",
-          "period": "上周",
-          "date_range": "2026W26 (上周) vs 2025W26 (去年同期)",
-          "current_wanfu": 120.47,
-          "compare_wanfu": 126.72,
-          "yoy": -4.94,
-          "delta": -6.25,
-          "service_count": 92568,
-          "service_yoy": 4.54,
-          "order_count": 7684020,
-          "order_yoy": 9.96,
-          "top_up_factors": [
-                    {
-                              "name": "华南战区",
-                              "dim_type": "战区",
-                              "delta": 0.0048,
-                              "yoy": 8.06,
-                              "contrib": 0.52,
-                              "service_change_ratio": 0.0048,
-                              "contrib_wanfu": 0.0048,
-                              "service_delta": 447,
-                              "curr_service": 5995,
-                              "prev_service": 5548
-                    },
-                    {
-                              "name": "APP在线",
-                              "dim_type": "进线渠道",
-                              "delta": 0.0048,
-                              "yoy": 7.94,
-                              "contrib": 0.51,
-                              "service_change_ratio": 0.0048,
-                              "contrib_wanfu": 0.0048,
-                              "service_delta": 440,
-                              "curr_service": 5983,
-                              "prev_service": 5543
-                    },
-                    {
-                              "name": "质量问题",
-                              "dim_type": "事件类别",
-                              "delta": 0.0037,
-                              "yoy": 9.65,
-                              "contrib": 0.4,
-                              "service_change_ratio": 0.0037,
-                              "contrib_wanfu": 0.0037,
-                              "service_delta": 341,
-                              "curr_service": 3875,
-                              "prev_service": 3534
-                    },
-                    {
-                              "name": "小程序",
-                              "dim_type": "进线渠道",
-                              "delta": 0.0036,
-                              "yoy": 7.52,
-                              "contrib": 0.39,
-                              "service_change_ratio": 0.0036,
-                              "contrib_wanfu": 0.0036,
-                              "service_delta": 333,
-                              "curr_service": 4763,
-                              "prev_service": 4430
-                    },
-                    {
-                              "name": "西南战区",
-                              "dim_type": "战区",
-                              "delta": 0.0029,
-                              "yoy": 8.95,
-                              "contrib": 0.32,
-                              "service_change_ratio": 0.0029,
-                              "contrib_wanfu": 0.0029,
-                              "service_delta": 273,
-                              "curr_service": 3323,
-                              "prev_service": 3050
-                    }
-          ],
-          "top_down_factors": [
-                    {
-                              "name": "退款进度",
-                              "dim_type": "FAQ",
-                              "delta": -0.0004,
-                              "yoy": -1.58,
-                              "contrib": -0.04,
-                              "service_change_ratio": -0.0004,
-                              "contrib_wanfu": -0.0004,
-                              "service_delta": -36,
-                              "curr_service": 2243,
-                              "prev_service": 2279
-                    },
-                    {
-                              "name": "五线城市",
-                              "dim_type": "城市等级",
-                              "delta": -0.0006,
-                              "yoy": -1.71,
-                              "contrib": -0.06,
-                              "service_change_ratio": -0.0006,
-                              "contrib_wanfu": -0.0006,
-                              "service_delta": -60,
-                              "curr_service": 3453,
-                              "prev_service": 3513
-                    },
-                    {
-                              "name": "配送问题",
-                              "dim_type": "事件类别",
-                              "delta": -0.0008,
-                              "yoy": -3.13,
-                              "contrib": -0.08,
-                              "service_change_ratio": -0.0008,
-                              "contrib_wanfu": -0.0008,
-                              "service_delta": -72,
-                              "curr_service": 2225,
-                              "prev_service": 2297
-                    },
-                    {
-                              "name": "支付问题",
-                              "dim_type": "事件类别",
-                              "delta": -0.0009,
-                              "yoy": -3.41,
-                              "contrib": -0.08,
-                              "service_change_ratio": -0.0009,
-                              "contrib_wanfu": -0.0009,
-                              "service_delta": -79,
-                              "curr_service": 2240,
-                              "prev_service": 2319
-                    },
-                    {
-                              "name": "闪购",
-                              "dim_type": "品类",
-                              "delta": -0.0011,
-                              "yoy": -5.71,
-                              "contrib": -0.1,
-                              "service_change_ratio": -0.0011,
-                              "contrib_wanfu": -0.0011,
-                              "service_delta": -98,
-                              "curr_service": 1617,
-                              "prev_service": 1715
-                    }
-          ],
-          "daily_trend": [
-                    {
-                              "date": "周一 6/22",
-                              "current_wanfu": 12.32,
-                              "compare_wanfu": 10.26,
-                              "yoy": 20.08,
-                              "delta": 2.06
-                    },
-                    {
-                              "date": "周二 6/23",
-                              "current_wanfu": 11.47,
-                              "compare_wanfu": 10.51,
-                              "yoy": 9.13,
-                              "delta": 0.96
-                    },
-                    {
-                              "date": "周三 6/24",
-                              "current_wanfu": 11.5,
-                              "compare_wanfu": 10.87,
-                              "yoy": 5.8,
-                              "delta": 0.63
-                    },
-                    {
-                              "date": "周四 6/25",
-                              "current_wanfu": 10.51,
-                              "compare_wanfu": 10.79,
-                              "yoy": -2.59,
-                              "delta": -0.28
-                    },
-                    {
-                              "date": "周五 6/26",
-                              "current_wanfu": 12.18,
-                              "compare_wanfu": 9.78,
-                              "yoy": 24.54,
-                              "delta": 2.4
-                    },
-                    {
-                              "date": "周六 6/27",
-                              "current_wanfu": 13.17,
-                              "compare_wanfu": 11.1,
-                              "yoy": 18.65,
-                              "delta": 2.07
-                    },
-                    {
-                              "date": "周日 6/28",
-                              "current_wanfu": 11.15,
-                              "compare_wanfu": 9.15,
-                              "yoy": 21.86,
-                              "delta": 2.0
-                    }
-          ],
-          "dimensions": {
-                    "城市等级": [
-                              {
-                                        "name": "一线城市",
-                                        "current_value": 2704,
-                                        "compare_value": 2884,
-                                        "delta": -180,
-                                        "yoy": -6.24,
-                                        "service_change_ratio": -0.0019,
-                                        "contribution": -0.0019
-                              },
-                              {
-                                        "name": "二线城市",
-                                        "current_value": 4339,
-                                        "compare_value": 4612,
-                                        "delta": -273,
-                                        "yoy": -5.92,
-                                        "service_change_ratio": -0.0029,
-                                        "contribution": -0.0029
-                              },
-                              {
-                                        "name": "三线城市",
-                                        "current_value": 3571,
-                                        "compare_value": 3427,
-                                        "delta": 144,
-                                        "yoy": 4.2,
-                                        "service_change_ratio": 0.0016,
-                                        "contribution": 0.0016
-                              },
-                              {
-                                        "name": "四线城市",
-                                        "current_value": 1909,
-                                        "compare_value": 1764,
-                                        "delta": 145,
-                                        "yoy": 8.22,
-                                        "service_change_ratio": 0.0016,
-                                        "contribution": 0.0016
-                              },
-                              {
-                                        "name": "五线城市",
-                                        "current_value": 3453,
-                                        "compare_value": 3513,
-                                        "delta": -60,
-                                        "yoy": -1.71,
-                                        "service_change_ratio": -0.0006,
-                                        "contribution": -0.0006
-                              }
-                    ],
-                    "品类": [
-                              {
-                                        "name": "到店",
-                                        "current_value": 2510,
-                                        "compare_value": 2644,
-                                        "delta": -134,
-                                        "yoy": -5.07,
-                                        "service_change_ratio": -0.0014,
-                                        "contribution": -0.0014
-                              },
-                              {
-                                        "name": "外卖",
-                                        "current_value": 2500,
-                                        "compare_value": 2494,
-                                        "delta": 6,
-                                        "yoy": 0.24,
-                                        "service_change_ratio": 0.0001,
-                                        "contribution": 0.0001
-                              },
-                              {
-                                        "name": "闪购",
-                                        "current_value": 1617,
-                                        "compare_value": 1715,
-                                        "delta": -98,
-                                        "yoy": -5.71,
-                                        "service_change_ratio": -0.0011,
-                                        "contribution": -0.0011
-                              },
-                              {
-                                        "name": "酒旅",
-                                        "current_value": 3109,
-                                        "compare_value": 2975,
-                                        "delta": 134,
-                                        "yoy": 4.5,
-                                        "service_change_ratio": 0.0014,
-                                        "contribution": 0.0014
-                              },
-                              {
-                                        "name": "优选",
-                                        "current_value": 2234,
-                                        "compare_value": 2079,
-                                        "delta": 155,
-                                        "yoy": 7.46,
-                                        "service_change_ratio": 0.0017,
-                                        "contribution": 0.0017
-                              }
-                    ],
-                    "事件类别": [
-                              {
-                                        "name": "支付问题",
-                                        "current_value": 2240,
-                                        "compare_value": 2319,
-                                        "delta": -79,
-                                        "yoy": -3.41,
-                                        "service_change_ratio": -0.0009,
-                                        "contribution": -0.0009
-                              },
-                              {
-                                        "name": "退款问题",
-                                        "current_value": 2304,
-                                        "compare_value": 2148,
-                                        "delta": 156,
-                                        "yoy": 7.26,
-                                        "service_change_ratio": 0.0017,
-                                        "contribution": 0.0017
-                              },
-                              {
-                                        "name": "质量问题",
-                                        "current_value": 3875,
-                                        "compare_value": 3534,
-                                        "delta": 341,
-                                        "yoy": 9.65,
-                                        "service_change_ratio": 0.0037,
-                                        "contribution": 0.0037
-                              },
-                              {
-                                        "name": "账户问题",
-                                        "current_value": 3774,
-                                        "compare_value": 3549,
-                                        "delta": 225,
-                                        "yoy": 6.34,
-                                        "service_change_ratio": 0.0024,
-                                        "contribution": 0.0024
-                              },
-                              {
-                                        "name": "配送问题",
-                                        "current_value": 2225,
-                                        "compare_value": 2297,
-                                        "delta": -72,
-                                        "yoy": -3.13,
-                                        "service_change_ratio": -0.0008,
-                                        "contribution": -0.0008
-                              },
-                              {
-                                        "name": "会员服务",
-                                        "current_value": 1493,
-                                        "compare_value": 1606,
-                                        "delta": -113,
-                                        "yoy": -7.04,
-                                        "service_change_ratio": -0.0012,
-                                        "contribution": -0.0012
-                              }
-                    ],
-                    "进线渠道": [
-                              {
-                                        "name": "APP在线",
-                                        "current_value": 5983,
-                                        "compare_value": 5543,
-                                        "delta": 440,
-                                        "yoy": 7.94,
-                                        "service_change_ratio": 0.0048,
-                                        "contribution": 0.0048
-                              },
-                              {
-                                        "name": "小程序",
-                                        "current_value": 4763,
-                                        "compare_value": 4430,
-                                        "delta": 333,
-                                        "yoy": 7.52,
-                                        "service_change_ratio": 0.0036,
-                                        "contribution": 0.0036
-                              },
-                              {
-                                        "name": "电话热线",
-                                        "current_value": 2234,
-                                        "compare_value": 2366,
-                                        "delta": -132,
-                                        "yoy": -5.58,
-                                        "service_change_ratio": -0.0014,
-                                        "contribution": -0.0014
-                              }
-                    ],
-                    "战区": [
-                              {
-                                        "name": "华北战区",
-                                        "current_value": 2564,
-                                        "compare_value": 2711,
-                                        "delta": -147,
-                                        "yoy": -5.42,
-                                        "service_change_ratio": -0.0016,
-                                        "contribution": -0.0016
-                              },
-                              {
-                                        "name": "华南战区",
-                                        "current_value": 5995,
-                                        "compare_value": 5548,
-                                        "delta": 447,
-                                        "yoy": 8.06,
-                                        "service_change_ratio": 0.0048,
-                                        "contribution": 0.0048
-                              },
-                              {
-                                        "name": "华东战区",
-                                        "current_value": 2209,
-                                        "compare_value": 2120,
-                                        "delta": 89,
-                                        "yoy": 4.2,
-                                        "service_change_ratio": 0.001,
-                                        "contribution": 0.001
-                              },
-                              {
-                                        "name": "华中战区",
-                                        "current_value": 3251,
-                                        "compare_value": 3126,
-                                        "delta": 125,
-                                        "yoy": 4.0,
-                                        "service_change_ratio": 0.0014,
-                                        "contribution": 0.0014
-                              },
-                              {
-                                        "name": "西南战区",
-                                        "current_value": 3323,
-                                        "compare_value": 3050,
-                                        "delta": 273,
-                                        "yoy": 8.95,
-                                        "service_change_ratio": 0.0029,
-                                        "contribution": 0.0029
-                              },
-                              {
-                                        "name": "西北战区",
-                                        "current_value": 3601,
-                                        "compare_value": 3421,
-                                        "delta": 180,
-                                        "yoy": 5.26,
-                                        "service_change_ratio": 0.0019,
-                                        "contribution": 0.0019
-                              }
-                    ],
-                    "FAQ": [
-                              {
-                                        "name": "订单查询",
-                                        "current_value": 2869,
-                                        "compare_value": 2996,
-                                        "delta": -127,
-                                        "yoy": -4.24,
-                                        "service_change_ratio": -0.0014,
-                                        "contribution": -0.0014
-                              },
-                              {
-                                        "name": "退款进度",
-                                        "current_value": 2243,
-                                        "compare_value": 2279,
-                                        "delta": -36,
-                                        "yoy": -1.58,
-                                        "service_change_ratio": -0.0004,
-                                        "contribution": -0.0004
-                              },
-                              {
-                                        "name": "优惠券使用",
-                                        "current_value": 1809,
-                                        "compare_value": 1660,
-                                        "delta": 149,
-                                        "yoy": 8.98,
-                                        "service_change_ratio": 0.0016,
-                                        "contribution": 0.0016
-                              },
-                              {
-                                        "name": "账户异常",
-                                        "current_value": 5842,
-                                        "compare_value": 6018,
-                                        "delta": -176,
-                                        "yoy": -2.92,
-                                        "service_change_ratio": -0.0019,
-                                        "contribution": -0.0019
-                              },
-                              {
-                                        "name": "活动咨询",
-                                        "current_value": 2025,
-                                        "compare_value": 1951,
-                                        "delta": 74,
-                                        "yoy": 3.79,
-                                        "service_change_ratio": 0.0008,
-                                        "contribution": 0.0008
-                              }
-                    ]
-          },
-          "summary": "【模拟数据说明】本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。<br>【核心指标】到餐客服上周本期万服为120.47，对比期万服为126.72，同比下降-4.94%，差值为-6.25。服务量为92568，订单量为7684020。<br>【主要推高因素】华南战区（一级战区，万服波动贡献+0.48次/万单）、APP在线（进线渠道，万服波动贡献+0.48次/万单）、质量问题（事件类别，万服波动贡献+0.37次/万单）。<br>【主要压低因素】退款进度（六级FAQ，万服波动贡献-0.04次/万单）、五线城市（城市等级，万服波动贡献-0.06次/万单）、配送问题（事件类别，万服波动贡献-0.08次/万单）。<br>【口径说明】归因排序使用万服波动贡献（次/万单）；服务量变化占比仅辅助说明服务量规模变化，不能证明因果关系。<br>【模型状态】DeepSeek 调用失败，当前展示的是基于 anomaly_calc 计算结果的降级报告。错误信息：实时模型暂时不可用，系统已使用结构化计算结果生成降级报告。",
-          "calc_result": {
-                    "overall": {
-                              "current": 120.47,
-                              "compare": 126.72,
-                              "yoy": -4.94,
-                              "delta": -6.25,
-                              "service_cnt": 92568,
-                              "order_cnt": 7684020,
-                              "service_yoy": 4.54,
-                              "order_yoy": 9.96
-                    },
-                    "dim": {
-                              "top_up": [
-                                        {
-                                                  "name": "华南战区",
-                                                  "dim_type": "战区",
-                                                  "delta": 0.0048,
-                                                  "yoy": 8.06,
-                                                  "contrib": 0.52,
-                                                  "service_change_ratio": 0.0048,
-                                                  "contrib_wanfu": 0.0048,
-                                                  "service_delta": 447,
-                                                  "curr_service": 5995,
-                                                  "prev_service": 5548
-                                        },
-                                        {
-                                                  "name": "APP在线",
-                                                  "dim_type": "进线渠道",
-                                                  "delta": 0.0048,
-                                                  "yoy": 7.94,
-                                                  "contrib": 0.51,
-                                                  "service_change_ratio": 0.0048,
-                                                  "contrib_wanfu": 0.0048,
-                                                  "service_delta": 440,
-                                                  "curr_service": 5983,
-                                                  "prev_service": 5543
-                                        },
-                                        {
-                                                  "name": "质量问题",
-                                                  "dim_type": "事件类别",
-                                                  "delta": 0.0037,
-                                                  "yoy": 9.65,
-                                                  "contrib": 0.4,
-                                                  "service_change_ratio": 0.0037,
-                                                  "contrib_wanfu": 0.0037,
-                                                  "service_delta": 341,
-                                                  "curr_service": 3875,
-                                                  "prev_service": 3534
-                                        },
-                                        {
-                                                  "name": "小程序",
-                                                  "dim_type": "进线渠道",
-                                                  "delta": 0.0036,
-                                                  "yoy": 7.52,
-                                                  "contrib": 0.39,
-                                                  "service_change_ratio": 0.0036,
-                                                  "contrib_wanfu": 0.0036,
-                                                  "service_delta": 333,
-                                                  "curr_service": 4763,
-                                                  "prev_service": 4430
-                                        },
-                                        {
-                                                  "name": "西南战区",
-                                                  "dim_type": "战区",
-                                                  "delta": 0.0029,
-                                                  "yoy": 8.95,
-                                                  "contrib": 0.32,
-                                                  "service_change_ratio": 0.0029,
-                                                  "contrib_wanfu": 0.0029,
-                                                  "service_delta": 273,
-                                                  "curr_service": 3323,
-                                                  "prev_service": 3050
-                                        }
-                              ],
-                              "top_down": [
-                                        {
-                                                  "name": "退款进度",
-                                                  "dim_type": "FAQ",
-                                                  "delta": -0.0004,
-                                                  "yoy": -1.58,
-                                                  "contrib": -0.04,
-                                                  "service_change_ratio": -0.0004,
-                                                  "contrib_wanfu": -0.0004,
-                                                  "service_delta": -36,
-                                                  "curr_service": 2243,
-                                                  "prev_service": 2279
-                                        },
-                                        {
-                                                  "name": "五线城市",
-                                                  "dim_type": "城市等级",
-                                                  "delta": -0.0006,
-                                                  "yoy": -1.71,
-                                                  "contrib": -0.06,
-                                                  "service_change_ratio": -0.0006,
-                                                  "contrib_wanfu": -0.0006,
-                                                  "service_delta": -60,
-                                                  "curr_service": 3453,
-                                                  "prev_service": 3513
-                                        },
-                                        {
-                                                  "name": "配送问题",
-                                                  "dim_type": "事件类别",
-                                                  "delta": -0.0008,
-                                                  "yoy": -3.13,
-                                                  "contrib": -0.08,
-                                                  "service_change_ratio": -0.0008,
-                                                  "contrib_wanfu": -0.0008,
-                                                  "service_delta": -72,
-                                                  "curr_service": 2225,
-                                                  "prev_service": 2297
-                                        },
-                                        {
-                                                  "name": "支付问题",
-                                                  "dim_type": "事件类别",
-                                                  "delta": -0.0009,
-                                                  "yoy": -3.41,
-                                                  "contrib": -0.08,
-                                                  "service_change_ratio": -0.0009,
-                                                  "contrib_wanfu": -0.0009,
-                                                  "service_delta": -79,
-                                                  "curr_service": 2240,
-                                                  "prev_service": 2319
-                                        },
-                                        {
-                                                  "name": "闪购",
-                                                  "dim_type": "品类",
-                                                  "delta": -0.0011,
-                                                  "yoy": -5.71,
-                                                  "contrib": -0.1,
-                                                  "service_change_ratio": -0.0011,
-                                                  "contrib_wanfu": -0.0011,
-                                                  "service_delta": -98,
-                                                  "curr_service": 1617,
-                                                  "prev_service": 1715
-                                        }
-                              ],
-                              "detail": {
-                                        "城市等级": [
-                                                  {
-                                                            "name": "一线城市",
-                                                            "curr_service": 2704,
-                                                            "prev_service": 2884,
-                                                            "delta": -180,
-                                                            "yoy": -6.24,
-                                                            "contrib": -0.18,
-                                                            "service_change_ratio": -0.0019,
-                                                            "contrib_wanfu": -0.0019,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "二线城市",
-                                                            "curr_service": 4339,
-                                                            "prev_service": 4612,
-                                                            "delta": -273,
-                                                            "yoy": -5.92,
-                                                            "contrib": -0.28,
-                                                            "service_change_ratio": -0.0029,
-                                                            "contrib_wanfu": -0.0029,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "三线城市",
-                                                            "curr_service": 3571,
-                                                            "prev_service": 3427,
-                                                            "delta": 144,
-                                                            "yoy": 4.2,
-                                                            "contrib": 0.16,
-                                                            "service_change_ratio": 0.0016,
-                                                            "contrib_wanfu": 0.0016,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "四线城市",
-                                                            "curr_service": 1909,
-                                                            "prev_service": 1764,
-                                                            "delta": 145,
-                                                            "yoy": 8.22,
-                                                            "contrib": 0.17,
-                                                            "service_change_ratio": 0.0016,
-                                                            "contrib_wanfu": 0.0016,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "五线城市",
-                                                            "curr_service": 3453,
-                                                            "prev_service": 3513,
-                                                            "delta": -60,
-                                                            "yoy": -1.71,
-                                                            "contrib": -0.06,
-                                                            "service_change_ratio": -0.0006,
-                                                            "contrib_wanfu": -0.0006,
-                                                            "tags": []
-                                                  }
-                                        ],
-                                        "品类": [
-                                                  {
-                                                            "name": "到店",
-                                                            "curr_service": 2510,
-                                                            "prev_service": 2644,
-                                                            "delta": -134,
-                                                            "yoy": -5.07,
-                                                            "contrib": -0.14,
-                                                            "service_change_ratio": -0.0014,
-                                                            "contrib_wanfu": -0.0014,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "外卖",
-                                                            "curr_service": 2500,
-                                                            "prev_service": 2494,
-                                                            "delta": 6,
-                                                            "yoy": 0.24,
-                                                            "contrib": 0.01,
-                                                            "service_change_ratio": 0.0001,
-                                                            "contrib_wanfu": 0.0001,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "闪购",
-                                                            "curr_service": 1617,
-                                                            "prev_service": 1715,
-                                                            "delta": -98,
-                                                            "yoy": -5.71,
-                                                            "contrib": -0.1,
-                                                            "service_change_ratio": -0.0011,
-                                                            "contrib_wanfu": -0.0011,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "酒旅",
-                                                            "curr_service": 3109,
-                                                            "prev_service": 2975,
-                                                            "delta": 134,
-                                                            "yoy": 4.5,
-                                                            "contrib": 0.15,
-                                                            "service_change_ratio": 0.0014,
-                                                            "contrib_wanfu": 0.0014,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "优选",
-                                                            "curr_service": 2234,
-                                                            "prev_service": 2079,
-                                                            "delta": 155,
-                                                            "yoy": 7.46,
-                                                            "contrib": 0.18,
-                                                            "service_change_ratio": 0.0017,
-                                                            "contrib_wanfu": 0.0017,
-                                                            "tags": []
-                                                  }
-                                        ],
-                                        "事件类别": [
-                                                  {
-                                                            "name": "支付问题",
-                                                            "curr_service": 2240,
-                                                            "prev_service": 2319,
-                                                            "delta": -79,
-                                                            "yoy": -3.41,
-                                                            "contrib": -0.08,
-                                                            "service_change_ratio": -0.0009,
-                                                            "contrib_wanfu": -0.0009,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "退款问题",
-                                                            "curr_service": 2304,
-                                                            "prev_service": 2148,
-                                                            "delta": 156,
-                                                            "yoy": 7.26,
-                                                            "contrib": 0.18,
-                                                            "service_change_ratio": 0.0017,
-                                                            "contrib_wanfu": 0.0017,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "质量问题",
-                                                            "curr_service": 3875,
-                                                            "prev_service": 3534,
-                                                            "delta": 341,
-                                                            "yoy": 9.65,
-                                                            "contrib": 0.4,
-                                                            "service_change_ratio": 0.0037,
-                                                            "contrib_wanfu": 0.0037,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "账户问题",
-                                                            "curr_service": 3774,
-                                                            "prev_service": 3549,
-                                                            "delta": 225,
-                                                            "yoy": 6.34,
-                                                            "contrib": 0.26,
-                                                            "service_change_ratio": 0.0024,
-                                                            "contrib_wanfu": 0.0024,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "配送问题",
-                                                            "curr_service": 2225,
-                                                            "prev_service": 2297,
-                                                            "delta": -72,
-                                                            "yoy": -3.13,
-                                                            "contrib": -0.08,
-                                                            "service_change_ratio": -0.0008,
-                                                            "contrib_wanfu": -0.0008,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "会员服务",
-                                                            "curr_service": 1493,
-                                                            "prev_service": 1606,
-                                                            "delta": -113,
-                                                            "yoy": -7.04,
-                                                            "contrib": -0.11,
-                                                            "service_change_ratio": -0.0012,
-                                                            "contrib_wanfu": -0.0012,
-                                                            "tags": []
-                                                  }
-                                        ],
-                                        "进线渠道": [
-                                                  {
-                                                            "name": "APP在线",
-                                                            "curr_service": 5983,
-                                                            "prev_service": 5543,
-                                                            "delta": 440,
-                                                            "yoy": 7.94,
-                                                            "contrib": 0.51,
-                                                            "service_change_ratio": 0.0048,
-                                                            "contrib_wanfu": 0.0048,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "小程序",
-                                                            "curr_service": 4763,
-                                                            "prev_service": 4430,
-                                                            "delta": 333,
-                                                            "yoy": 7.52,
-                                                            "contrib": 0.39,
-                                                            "service_change_ratio": 0.0036,
-                                                            "contrib_wanfu": 0.0036,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "电话热线",
-                                                            "curr_service": 2234,
-                                                            "prev_service": 2366,
-                                                            "delta": -132,
-                                                            "yoy": -5.58,
-                                                            "contrib": -0.13,
-                                                            "service_change_ratio": -0.0014,
-                                                            "contrib_wanfu": -0.0014,
-                                                            "tags": []
-                                                  }
-                                        ],
-                                        "战区": [
-                                                  {
-                                                            "name": "华北战区",
-                                                            "curr_service": 2564,
-                                                            "prev_service": 2711,
-                                                            "delta": -147,
-                                                            "yoy": -5.42,
-                                                            "contrib": -0.15,
-                                                            "service_change_ratio": -0.0016,
-                                                            "contrib_wanfu": -0.0016,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "华南战区",
-                                                            "curr_service": 5995,
-                                                            "prev_service": 5548,
-                                                            "delta": 447,
-                                                            "yoy": 8.06,
-                                                            "contrib": 0.52,
-                                                            "service_change_ratio": 0.0048,
-                                                            "contrib_wanfu": 0.0048,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "华东战区",
-                                                            "curr_service": 2209,
-                                                            "prev_service": 2120,
-                                                            "delta": 89,
-                                                            "yoy": 4.2,
-                                                            "contrib": 0.1,
-                                                            "service_change_ratio": 0.001,
-                                                            "contrib_wanfu": 0.001,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "华中战区",
-                                                            "curr_service": 3251,
-                                                            "prev_service": 3126,
-                                                            "delta": 125,
-                                                            "yoy": 4.0,
-                                                            "contrib": 0.14,
-                                                            "service_change_ratio": 0.0014,
-                                                            "contrib_wanfu": 0.0014,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "西南战区",
-                                                            "curr_service": 3323,
-                                                            "prev_service": 3050,
-                                                            "delta": 273,
-                                                            "yoy": 8.95,
-                                                            "contrib": 0.32,
-                                                            "service_change_ratio": 0.0029,
-                                                            "contrib_wanfu": 0.0029,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "西北战区",
-                                                            "curr_service": 3601,
-                                                            "prev_service": 3421,
-                                                            "delta": 180,
-                                                            "yoy": 5.26,
-                                                            "contrib": 0.2,
-                                                            "service_change_ratio": 0.0019,
-                                                            "contrib_wanfu": 0.0019,
-                                                            "tags": []
-                                                  }
-                                        ],
-                                        "FAQ": [
-                                                  {
-                                                            "name": "订单查询",
-                                                            "curr_service": 2869,
-                                                            "prev_service": 2996,
-                                                            "delta": -127,
-                                                            "yoy": -4.24,
-                                                            "contrib": -0.13,
-                                                            "service_change_ratio": -0.0014,
-                                                            "contrib_wanfu": -0.0014,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "退款进度",
-                                                            "curr_service": 2243,
-                                                            "prev_service": 2279,
-                                                            "delta": -36,
-                                                            "yoy": -1.58,
-                                                            "contrib": -0.04,
-                                                            "service_change_ratio": -0.0004,
-                                                            "contrib_wanfu": -0.0004,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "优惠券使用",
-                                                            "curr_service": 1809,
-                                                            "prev_service": 1660,
-                                                            "delta": 149,
-                                                            "yoy": 8.98,
-                                                            "contrib": 0.18,
-                                                            "service_change_ratio": 0.0016,
-                                                            "contrib_wanfu": 0.0016,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "账户异常",
-                                                            "curr_service": 5842,
-                                                            "prev_service": 6018,
-                                                            "delta": -176,
-                                                            "yoy": -2.92,
-                                                            "contrib": -0.18,
-                                                            "service_change_ratio": -0.0019,
-                                                            "contrib_wanfu": -0.0019,
-                                                            "tags": []
-                                                  },
-                                                  {
-                                                            "name": "活动咨询",
-                                                            "curr_service": 2025,
-                                                            "prev_service": 1951,
-                                                            "delta": 74,
-                                                            "yoy": 3.79,
-                                                            "contrib": 0.08,
-                                                            "service_change_ratio": 0.0008,
-                                                            "contrib_wanfu": 0.0008,
-                                                            "tags": []
-                                                  }
-                                        ]
-                              }
-                    },
-                    "daily_trend": [
-                              {
-                                        "date": "周一 6/22",
-                                        "curr_wanfu": 12.32,
-                                        "prev_wanfu": 10.26,
-                                        "yoy": 20.08,
-                                        "delta": 2.06
-                              },
-                              {
-                                        "date": "周二 6/23",
-                                        "curr_wanfu": 11.47,
-                                        "prev_wanfu": 10.51,
-                                        "yoy": 9.13,
-                                        "delta": 0.96
-                              },
-                              {
-                                        "date": "周三 6/24",
-                                        "curr_wanfu": 11.5,
-                                        "prev_wanfu": 10.87,
-                                        "yoy": 5.8,
-                                        "delta": 0.63
-                              },
-                              {
-                                        "date": "周四 6/25",
-                                        "curr_wanfu": 10.51,
-                                        "prev_wanfu": 10.79,
-                                        "yoy": -2.59,
-                                        "delta": -0.28
-                              },
-                              {
-                                        "date": "周五 6/26",
-                                        "curr_wanfu": 12.18,
-                                        "prev_wanfu": 9.78,
-                                        "yoy": 24.54,
-                                        "delta": 2.4
-                              },
-                              {
-                                        "date": "周六 6/27",
-                                        "curr_wanfu": 13.17,
-                                        "prev_wanfu": 11.1,
-                                        "yoy": 18.65,
-                                        "delta": 2.07
-                              },
-                              {
-                                        "date": "周日 6/28",
-                                        "curr_wanfu": 11.15,
-                                        "prev_wanfu": 9.15,
-                                        "yoy": 21.86,
-                                        "delta": 2.0
-                              }
-                    ],
-                    "alerts": [
-                              {
-                                        "type": "new_category",
-                                        "name": "会员服务",
-                                        "desc": "本期新增事件分类，可能导致数据虚高，建议排除后分析"
-                              },
-                              {
-                                        "type": "extreme_value",
-                                        "name": "退款进度",
-                                        "yoy": 666.1,
-                                        "desc": "变化幅度过大（YoY 666.1%），疑似口径或分类调整，建议人工核查"
-                              }
-                    ],
-                    "dimension_availability": {
-                              "城市等级": true,
-                              "品类": true,
-                              "事件类别": true,
-                              "进线渠道": true,
-                              "战区": true,
-                              "FAQ": true
-                    }
-          },
-          "meta": {
-                    "dataset_id": "dacan_cs_wanfu_weekly",
-                    "query_timestamp": "demo-seed-20260702::2026W26 (上周)",
-                    "current_date_range": "2026W26 (上周)",
-                    "compare_date_range": "2025W26 (去年同期)",
-                    "current_week": [
-                              "2026",
-                              "W26"
-                    ],
-                    "compare_week": [
-                              "2025",
-                              "W26"
-                    ],
-                    "granularity": "weekly"
-          },
-          "data_note": "本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。",
-          "llm_error": "实时模型暂时不可用，系统已使用结构化计算结果生成降级报告。",
-          "llm_error_code": "LLM_CONNECTION_ERROR"
-};
-
-        const STATIC_THINKING_STEPS = [
-            ['intent_recognition', '识别为生成周报；业务为到餐客服；时间为上周；对比方式为去年同期。'],
-            ['parameter_validation', '参数校验通过：业务与周期均为有效参数。'],
-            ['data_query', '读取作品集内置的固定模拟 VoC 数据，生成周粒度指标、日趋势和 6 维度明细。'],
-            ['calibration', '数据口径自校验通过：万服强制走「服务量÷订单量×10000」口径。'],
-            ['anomaly_calc', '计算本期万服、去年同期万服、同比变化、万服波动贡献与服务量变化占比，并按维度排序主要因素。'],
-            ['report_generation', '静态作品集版不调用真实 DeepSeek，直接展示与后端降级报告一致的结构化报告。'],
-            ['html_generation', '生成本地 5 模块 HTML 报告（Demo Mock 本地渲染，非真实 S3 上传）。']
-        ];
-
-        let currentReportData = STATIC_REPORT_DATA;
 
         // 多轮对话历史（用于槽位继承：缺业务/周期时从历史补全，不静默默认）
         let chatHistory = [];
         let currentAssistantReply = '';
+        // 报告数据只允许来自后端 report 事件；初始为空，绝不填充静态报告
+        let currentReportData = null;
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1573,10 +518,46 @@
             } else {
                 document.getElementById('chatPanel').classList.add('hidden');
                 document.getElementById('reportPanel').classList.remove('hidden');
-                renderReport(currentReportData);
-                initCharts();
-                resizeDailyChartSoon();
+                // 报告数据只能来自后端 report 事件；未生成时显示空状态
+                if (currentReportData && currentReportData.business) {
+                    renderReport(currentReportData);
+                    initCharts();
+                    resizeDailyChartSoon();
+                } else {
+                    showEmptyReportState();
+                }
             }
+        }
+
+        // 报告展示页空状态：尚未从后端收到报告时的占位提示（非静态报告数据）
+        function showEmptyReportState() {
+            const reportPanel = document.getElementById('reportPanel');
+            if (!reportPanel) return;
+            const header = document.querySelector('#reportPanel .border-b');
+            if (header) {
+                const h1 = header.querySelector('h1');
+                const periodEl = document.getElementById('reportPeriod');
+                const noteEl = document.getElementById('reportDataNote');
+                const timeEl = document.getElementById('reportGenTime');
+                if (h1) h1.textContent = '体验异动分析周报';
+                if (periodEl) periodEl.textContent = '尚未生成报告';
+                if (noteEl) noteEl.textContent = '报告数据来自后端计算，请先在对话区输入需求生成报告。';
+                if (timeEl) timeEl.textContent = '--';
+            }
+            const metricCards = document.getElementById('metricCards');
+            if (metricCards) {
+                metricCards.querySelectorAll('.metric-card .text-3xl').forEach(el => { el.textContent = '--'; });
+            }
+            const summaryDiv = document.getElementById('reportSummary');
+            if (summaryDiv) summaryDiv.innerHTML = '<p>请先在对话区输入需求（例如：生成到餐客服上周周报），Agent 将调用后端完成数据查询与异动计算。</p>';
+            const factorCards = document.getElementById('factorCards');
+            if (factorCards) {
+                const upList = factorCards.querySelector('.bg-red-50 ul');
+                const downList = factorCards.querySelector('.bg-blue-50 ul');
+                if (upList) upList.innerHTML = '<li>• 暂无数据，生成报告后展示</li>';
+                if (downList) downList.innerHTML = '<li>• 暂无数据，生成报告后展示</li>';
+            }
+            renderAlertsAndUnavailable({});
         }
 
         function switchDimTab(dim) {
@@ -1606,6 +587,47 @@
             return window.location.origin;
         }
 
+        // 后端健康检查：页面加载时调用，后端不可达时明确报错并阻止生成。
+        async function checkBackendHealth() {
+            const apiBase = getApiBaseUrl();
+            const backendUrl = `${apiBase}/health`;
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 5000);
+                const response = await fetch(backendUrl, { signal: controller.signal });
+                clearTimeout(timer);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return true;
+            } catch (error) {
+                showBackendUnavailable(apiBase);
+                return false;
+            }
+        }
+
+        // 后端不可达提示：显示明确错误与启动命令，不展示任何静态报告。
+        function showBackendUnavailable(apiBase) {
+            const messageList = document.getElementById('messageList');
+            messageList.classList.remove('hidden');
+            document.getElementById('welcomeArea').classList.add('hidden');
+            document.getElementById('loadingArea').classList.add('hidden');
+
+            let banner = document.getElementById('backendDownBanner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'backendDownBanner';
+                banner.className = 'rounded-xl border border-red-200 bg-red-50 p-4 mb-4 animate-slide-up';
+                banner.innerHTML = `
+                    <div class="font-bold text-red-600 mb-1">后端服务未连接</div>
+                    <div class="text-sm text-red-700 mb-2">请先启动后端服务，然后刷新页面重试。</div>
+                    <div class="text-xs text-gray-600 bg-white rounded-lg p-2 font-mono">python start_servers.py start</div>
+                `;
+                messageList.appendChild(banner);
+            }
+            addMessage(`后端服务未连接（${apiBase}）。请先启动后端服务：python start_servers.py start，然后刷新页面重试。`, 'ai');
+        }
+
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
@@ -1633,7 +655,12 @@
                 });
 
                 if (!response.ok || !response.body) {
-                    throw new Error(`流式接口请求失败：HTTP ${response.status}`);
+                    // 后端不可达/不可用：明确报错，不降级、不展示静态报告
+                    document.getElementById('loadingArea').classList.add('hidden');
+                    const status = response.status || '无响应';
+                    showBackendUnavailable(getApiBaseUrl());
+                    addMessage(`后端接口请求失败：HTTP ${status}。请确认后端服务已启动（python start_servers.py start）后重试。`, 'ai');
+                    return;
                 }
 
                 const reader = response.body.getReader();
@@ -1651,7 +678,10 @@
                 buffer += decoder.decode();
                 parseSseBuffer(buffer, handleSseEvent);
             } catch (error) {
-                handleError(error.message || String(error));
+                // 网络/连接错误：明确报错，不降级为静态演示
+                document.getElementById('loadingArea').classList.add('hidden');
+                showBackendUnavailable(getApiBaseUrl());
+                addMessage(`无法连接后端服务：${error.message || error}。请先启动后端服务（python start_servers.py start）后重试。`, 'ai');
             }
         }
 
@@ -2702,8 +1732,14 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderReport(STATIC_REPORT_DATA);
-            switchTab('chat');
+            // 页面加载先做后端健康检查：后端不可达时明确提示，不展示任何静态报告
+            checkBackendHealth().then(ok => {
+                switchTab('chat');
+                if (ok) {
+                    const statusEl = document.querySelector('header .text-red-600');
+                    if (statusEl) statusEl.textContent = '实时联调版 · 后端已连接';
+                }
+            });
         });
     </script>
 </body>

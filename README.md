@@ -113,9 +113,20 @@ python scripts/check_deepseek_connection.py
 
 项目已支持前后端同源部署：线上访问根路径 `/` 会直接打开 Agent 页面，页面会自动请求同一域名下的 `/api/chat/stream` 和 `/health`，不再写死 `localhost`。
 
-### 方案一：GitHub Pages 静态作品集版（最稳，不需要后端）
+### 方案一：GitHub Pages（静态托管，需连接后端才能完整运行 Agent）
 
-仓库已提供 `docs/index.html` 静态演示页，并通过 `.github/workflows/pages.yml` 发布到 GitHub Pages。这个页面不调用真实 DeepSeek，不连接后端服务器，不需要 API Key，适合作为简历和自我介绍网站中的稳定公开链接。
+> **重要说明**：GitHub Pages 只能托管静态页面，不是完整可运行的后端环境。
+> 页面打开后会主动检查后端是否可达（请求 `/health`）；后端不可达时页面会明确提示
+> **「后端服务未连接」并展示启动命令**，**不会展示静态演示报告、不会伪造 Agent 执行**。
+> 要完整运行 Agent（意图识别、数据查询、异动计算、报告生成），必须本地启动后端：
+>
+> ```bash
+> python start_servers.py start
+> ```
+>
+> 然后通过 `http://localhost:8000/` 访问页面，输入「生成到餐客服上周周报」即可走真实后端链路。
+
+仓库提供 `docs/index.html` 作为前端入口，并通过 `.github/workflows/pages.yml` 发布到 GitHub Pages。该页面适合作为简历和自我介绍网站中的链接展示，但**仅用于展示前端界面与说明，不代表可独立运行的 Agent**。
 
 启用方式：
 
@@ -128,7 +139,7 @@ python scripts/check_deepseek_connection.py
 https://csijia020-wq.github.io/voc-experience-anomaly-agent/
 ```
 
-页面会模拟 Agent 的核心链路：用户输入、意图识别、数据查询、异动计算、报告生成和最终报告展示。完整后端版仍保留在仓库中，可本地运行或后续部署到云端。
+页面加载时会检查后端；若后端不可达，页面显示「后端服务未连接 / 请先启动后端服务：python start_servers.py start」，且不会展示任何静态报告。完整可运行版需本地启动后端（见「启动方式」一节）。
 
 ### 方案二：Hugging Face Spaces（不需要绑卡，但依赖平台账号状态）
 

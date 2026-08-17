@@ -1,4 +1,11 @@
-"""Build the GitHub Pages static portfolio from the real frontend report page."""
+"""【已弃用】Build the GitHub Pages static portfolio from the real frontend report page.
+
+DEPRECATED: 前端已改为「强依赖后端」模式，不再内置 STATIC_REPORT_DATA /
+STATIC_THINKING_STEPS，也不允许后端不可达时展示静态演示报告。此脚本生成的
+静态数据兜底逻辑已从 docs/index.html 移除，脚本引用的 project_delivery/
+源文件也已在工作区删除，请勿再运行本脚本。GitHub Pages 仅托管前端页面，
+完整运行 Agent 需要本地启动后端（python start_servers.py start）。
+"""
 
 from __future__ import annotations
 

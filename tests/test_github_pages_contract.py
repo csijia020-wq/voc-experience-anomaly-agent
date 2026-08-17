@@ -16,18 +16,68 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("VoC 体验异动分析 Agent", html)
         self.assertIn("实时联调版", html)
         self.assertIn("生成到餐客服上周周报", html)
-        self.assertIn("本期万服", html)
-        self.assertIn("120.47", html)
-        self.assertIn("126.72", html)
-        self.assertIn("-4.94%", html)
+        self.assertIn("本期人工万服", html)
         self.assertIn("服务量变化占比", html)
-        self.assertIn("不调用真实 DeepSeek", html)
         self.assertNotIn("DEEPSEEK_API_KEY", html)
         self.assertNotIn("api.deepseek.com", html)
-        # 页面为「静态演示 + 本地后端」共用入口，API 通过 getApiBaseUrl 动态拼接；
+        # 页面为「本地后端联调」入口，API 通过 getApiBaseUrl 动态拼接；
         # file: 协议下才回退 localhost，不硬编码生产地址。
+        self.assertIn("getApiBaseUrl()", html)
+        self.assertNotIn("API_BASE_URL", html)
 
-    def test_static_portfolio_embeds_full_report_page(self):
+    def test_no_static_report_fallback_data(self):
+        """前端不得内置固定报告数据或静态流程，报告只能来自后端 report 事件。"""
+        with open(STATIC_PAGE, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        self.assertNotIn("STATIC_REPORT_DATA", html)
+        self.assertNotIn("STATIC_THINKING_STEPS", html)
+        self.assertNotIn("runStaticDemo", html)
+        self.assertNotIn("isStaticHosting", html)
+        self.assertNotIn("renderReport(STATIC_REPORT_DATA)", html)
+        # 不得内嵌可被误认为真实报告的固定指标数值
+        self.assertNotIn("120.47", html)
+        self.assertNotIn("126.72", html)
+        self.assertNotIn("-4.94%", html)
+        # 报告数据只能来自后端 report 事件
+        self.assertIn("function handleReport(reportData)", html)
+        self.assertIn("currentReportData = reportData", html)
+
+    def test_backend_unavailable_shows_error_not_report(self):
+        """后端不可达时前端必须明确报错并提示启动命令，不展示静态报告。"""
+        with open(STATIC_PAGE, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # 页面加载时检查后端健康
+        self.assertIn("function checkBackendHealth", html)
+        self.assertIn("/health", html)
+        # 后端不可达提示文案与启动命令
+        self.assertIn("后端服务未连接", html)
+        self.assertIn("请先启动后端服务", html)
+        self.assertIn("python start_servers.py start", html)
+        self.assertIn("showBackendUnavailable", html)
+        # SSE 失败/接口失败时不生成静态报告，只报错
+        self.assertIn("后端接口请求失败", html)
+        self.assertIn("无法连接后端服务", html)
+        # 不允许自动切换到静态演示
+        self.assertNotIn("不调用真实 DeepSeek", html)
+        self.assertNotIn("静态作品集演示版", html)
+
+    def test_report_only_from_backend_report_event(self):
+        """点击发送必须调用 /api/chat/stream；报告展示只能由后端 report 事件触发。"""
+        with open(STATIC_PAGE, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        self.assertIn("/api/chat/stream", html)
+        self.assertIn("method: 'POST'", html)
+        self.assertIn("handleSseEvent", html)
+        # 只有 report 事件才会渲染报告
+        self.assertIn("if (event === 'report')", html)
+        self.assertIn("renderReport(reportData)", html)
+        # 报告页无数据时显示空状态而非静态报告
+        self.assertIn("showEmptyReportState", html)
+
+    def test_full_report_page_structure(self):
         with open(STATIC_PAGE, "r", encoding="utf-8") as f:
             html = f.read()
 
@@ -43,8 +93,6 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("function computeDimTops", html)
         self.assertIn("function renderDimensionTops", html)
         self.assertIn("function updateChart", html)
-        self.assertIn("const STATIC_REPORT_DATA", html)
-        self.assertIn("renderReport(STATIC_REPORT_DATA)", html)
         # 6 维度 Top3 推高/压低卡片 + 明细表
         self.assertIn("Top3 推高", html)
         self.assertIn("Top3 压低", html)
@@ -54,8 +102,6 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("renderDimensionSection('dim_faq', '六级FAQ', getDimItems(dimensions, 'faq_level_6'), false, getDimTops(dimensionTops, 'faq_level_6'))", html)
         self.assertIn("renderDimensionSection('dim_channel', '进线渠道', getDimItems(dimensions, 'incoming_channel'), false, getDimTops(dimensionTops, 'incoming_channel'))", html)
         self.assertIn("renderDimensionSection('dim_zone', '一级战区', getDimItems(dimensions, 'warzone_level_1'), false, getDimTops(dimensionTops, 'warzone_level_1'))", html)
-        self.assertIn("华南战区", html)
-        self.assertIn("APP在线", html)
         self.assertIn("getApiBaseUrl()", html)
         self.assertNotIn("API_BASE_URL", html)
 
