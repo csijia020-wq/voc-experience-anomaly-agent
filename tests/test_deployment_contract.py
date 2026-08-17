@@ -56,6 +56,38 @@ class DeploymentContractTest(unittest.TestCase):
         self.assertIn(".env", dockerignore)
         self.assertIn(".git", dockerignore)
 
+    def test_dockerfile_copies_docs_and_output_not_deleted_dir(self):
+        """Dockerfile 不得引用已删除的 project_delivery，必须 COPY docs 并创建可写 output。"""
+        with open(DOCKERFILE, "r", encoding="utf-8") as f:
+            dockerfile = f.read()
+        self.assertNotIn("project_delivery", dockerfile)
+        self.assertIn("COPY docs /app/docs", dockerfile)
+        self.assertIn("mkdir -p /app/output", dockerfile)
+
+    def test_cors_whitelist_allows_github_pages_and_localhost(self):
+        self.assertIn("csijia020-wq.github.io", self.main_py)
+        self.assertIn("http://localhost:8000", self.main_py)
+        # 实际中间件配置使用白名单变量（allow_origins=CORS_ORIGINS），而非通配符
+        self.assertIn("allow_origins=CORS_ORIGINS", self.main_py)
+        self.assertNotIn('allow_origins=["*"],', self.main_py)
+        # 部署平台可通过 CORS_ORIGINS 环境变量覆盖
+        self.assertIn("CORS_ORIGINS", self.main_py)
+        self.assertIn('os.getenv("CORS_ORIGINS", "")', self.main_py)
+
+    def test_frontend_supports_public_api_base_config(self):
+        with open(os.path.join(ROOT, "docs", "index.html"), "r", encoding="utf-8") as f:
+            html = f.read()
+        self.assertIn("window.AGENT_API_BASE_URL", html)
+        self.assertIn("if (window.AGENT_API_BASE_URL)", html)
+        self.assertNotIn('AGENT_API_BASE_URL = "https://', html)
+
+    def test_render_config_has_cors_envvar_and_no_api_key(self):
+        with open(RENDER, "r", encoding="utf-8") as f:
+            render_yaml = f.read()
+        self.assertIn("CORS_ORIGINS", render_yaml)
+        # DEEPSEEK_API_KEY 不应写入 render.yaml（敏感变量需在控制台配置）
+        self.assertNotIn("DEEPSEEK_API_KEY:", render_yaml)
+
 
 if __name__ == "__main__":
     unittest.main()

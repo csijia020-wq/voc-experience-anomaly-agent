@@ -214,6 +214,63 @@ https://voc-experience-anomaly-agent.onrender.com/
 
 这个地址就是可以放进自我介绍网站、简历或作品集的正式演示链接。Render 免费实例可能会有冷启动，首次打开需要等待几十秒；冷启动后即可正常输入问题并生成报告。
 
+### 方案四：让 GitHub Pages 前端连接公网后端（推荐组合）
+
+**部署平台评估（当前项目为 FastAPI + SSE + 环境变量 + 可写 output/ 的形态）：**
+
+| 平台 | FastAPI | SSE | 环境变量 | 公网 HTTPS | 免费/低成本 | 冷启动 | 复杂度 | 作品集长期访问 |
+|---|---|---|---|---|---|---|---|---|
+| **Render（推荐）** | ✅ | ✅（uvicorn 原生） | ✅ | ✅（.onrender.com） | 免费实例（休眠） | 冷启动 30s-1min | 低（已有 render.yaml） | ✅ 合适 |
+| Hugging Face Spaces Docker | ✅ | ✅ | ✅（secrets） | ✅（hf.co/spaces） | 免费 CPU Basic（休眠） | 冷启动 | 中（需推 Docker） | ✅ 可用 |
+| Railway | ✅ | ✅ | ✅ | ✅（.up.railway.app） | 有限免费额度 | 低 | 中 | ⚠️ 免费额度有限 |
+| Fly.io | ✅ | ✅ | ✅ | ✅（.fly.dev） | 需绑卡验证 | 低 | 高 | ⚠️ 需账号验证 |
+| GitHub Pages 本身 | ❌ 仅静态 | ❌ | ❌ | ✅ | ✅ | — | — | ❌ 不能运行后端 |
+
+**推荐：Render Web Service（已有 `render.yaml`，配置成本最低）**，前端仍用 GitHub Pages 托管，
+两者通过 CORS 白名单 + `AGENT_API_BASE_URL` 打通。
+
+部署后接线步骤：
+
+1. **部署后端**：在 Render 用 `New -> Blueprint` 连接本仓库，读取 `render.yaml` 自动创建
+   `voc-experience-anomaly-agent` 服务。在 Render 控制台 `Environment` 新增：
+
+```env
+DEEPSEEK_API_KEY=你的真实 DeepSeek Key   # 不填也能运行（确定性降级报告）
+```
+
+2. **配置 GitHub Pages 前端指向后端**：在 GitHub 仓库 `Settings -> Secrets and variables
+   -> Actions -> Variables` 新增变量：
+
+```text
+AGENT_API_BASE_URL=https://voc-experience-anomaly-agent.onrender.com
+```
+
+   重新运行 `Deploy static portfolio demo to GitHub Pages` workflow，部署脚本会把
+   `AGENT_API_BASE_URL` 注入 `docs/index.html` 的 `window.AGENT_API_BASE_URL`。
+
+3. **验证**：打开 `https://csijia020-wq.github.io/voc-experience-anomaly-agent/`，
+   输入「生成到餐客服上周周报」，SSE 阶段与报告均来自公网后端。
+
+若未配置 `AGENT_API_BASE_URL`，线上前端会显示「后端服务未连接」，不会展示静态报告。
+
+**环境变量清单（后端部署平台需配置）：**
+
+```env
+DEEPSEEK_API_KEY=            # 可选；不填则使用确定性降级报告，不崩溃
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_USE_ENV_PROXY=false
+LLM_CONNECT_TIMEOUT_SECONDS=10
+LLM_READ_TIMEOUT_SECONDS=60
+LLM_MAX_RETRIES=1
+DEMO_SEED=20260702
+DEMO_DETERMINISTIC=true
+CORS_ORIGINS=https://csijia020-wq.github.io,http://localhost:8000,http://localhost:8080   # 可选覆盖
+```
+
+注意：不要把 `DEEPSEEK_API_KEY` 写入代码、README、Dockerfile、render.yaml 或 GitHub 仓库；
+一律在部署平台控制台/Secrets 中配置。
+
 ## 固定演示问题
 
 ```text

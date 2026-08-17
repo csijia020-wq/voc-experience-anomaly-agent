@@ -586,7 +586,16 @@
             }
         }
 
+        // 公网后端地址配置（部署时注入）：
+        //   本地开发：留空即可，file: 协议回退 http://localhost:8000；
+        //   GitHub Pages 线上：部署时通过 window.AGENT_API_BASE_URL 指定公网后端，
+        //   例如 https://voc-experience-anomaly-agent.onrender.com
+        window.AGENT_API_BASE_URL = window.AGENT_API_BASE_URL || "";
+
         function getApiBaseUrl() {
+            if (window.AGENT_API_BASE_URL) {
+                return window.AGENT_API_BASE_URL.replace(/\/+$/, '');
+            }
             if (window.location.protocol === 'file:') {
                 return 'http://localhost:8000';
             }
@@ -643,6 +652,7 @@
                     <div class="font-bold text-red-600 mb-1">后端服务未连接，请先启动后端服务。</div>
                     <div class="text-sm text-red-700 mb-2">启动后刷新页面重试。报告数据仅来自后端，后端不可达时不会展示任何静态报告。</div>
                     <div class="text-xs text-gray-600 bg-white rounded-lg p-2 font-mono">python start_servers.py start</div>
+                    <div class="text-xs text-gray-500 mt-2">线上访问时如需连接公网后端，可在页面配置 window.AGENT_API_BASE_URL 指向后端地址后刷新。</div>
                 `;
                 messageList.appendChild(banner);
             }

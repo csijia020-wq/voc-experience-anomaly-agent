@@ -10,7 +10,10 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 
 COPY backend /app/backend
-COPY project_delivery /app/project_delivery
+COPY docs /app/docs
+
+# 云端可写目录:本地 HTML 报告、任务状态、定时任务配置
+RUN mkdir -p /app/output
 
 EXPOSE 7860
 

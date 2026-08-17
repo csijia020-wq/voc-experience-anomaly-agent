@@ -20,10 +20,11 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("服务量变化占比", html)
         self.assertNotIn("DEEPSEEK_API_KEY", html)
         self.assertNotIn("api.deepseek.com", html)
-        # 页面为「本地后端联调」入口，API 通过 getApiBaseUrl 动态拼接；
-        # file: 协议下才回退 localhost，不硬编码生产地址。
+        # 页面为「本地后端联调 + 公网后端可配置」入口：本地 file: 回退 localhost，
+        # 公网通过 window.AGENT_API_BASE_URL 注入，不硬编码具体后端地址。
         self.assertIn("getApiBaseUrl()", html)
-        self.assertNotIn("API_BASE_URL", html)
+        self.assertIn("window.AGENT_API_BASE_URL", html)
+        self.assertNotIn('AGENT_API_BASE_URL = "https://', html)
 
     def test_no_static_report_fallback_data(self):
         """前端不得内置固定报告数据或静态流程，报告只能来自后端 report 事件。"""
@@ -103,7 +104,9 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("renderDimensionSection('dim_channel', '进线渠道', getDimItems(dimensions, 'incoming_channel'), false, getDimTops(dimensionTops, 'incoming_channel'))", html)
         self.assertIn("renderDimensionSection('dim_zone', '一级战区', getDimItems(dimensions, 'warzone_level_1'), false, getDimTops(dimensionTops, 'warzone_level_1'))", html)
         self.assertIn("getApiBaseUrl()", html)
-        self.assertNotIn("API_BASE_URL", html)
+        # 公网后端地址通过 window.AGENT_API_BASE_URL 配置（部署时注入），不硬编码具体域名
+        self.assertIn("window.AGENT_API_BASE_URL", html)
+        self.assertNotIn('AGENT_API_BASE_URL = "https://', html)
 
     def test_github_pages_workflow_exists(self):
         self.assertTrue(os.path.exists(PAGES_WORKFLOW))

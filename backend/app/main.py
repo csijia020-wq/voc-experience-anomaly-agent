@@ -23,25 +23,37 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 挂载前端静态文件
+# 挂载前端静态文件（存在时才挂载：云端 API-only 部署可无 docs 目录）
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 frontend_dir = os.path.join(project_root, "docs")
 frontend_index = os.path.join(frontend_dir, "index.html")
 output_dir = os.path.join(project_root, "output")
-app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+if os.path.isdir(frontend_dir):
+    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 # 挂载本地 HTML 报告目录（s3plus-upload 本地落地产物，可通过 http://host/reports/xxx.html 访问，
 # 供前端 iframe 正常加载；不接真实 S3/CDN）
 os.makedirs(output_dir, exist_ok=True)
 app.mount("/reports", StaticFiles(directory=output_dir), name="reports")
 
-# CORS配置
+# CORS 配置：显式允许 GitHub Pages 线上前端、本地开发与同源部署访问。
+# 说明：allow_origins=["*"] 与 allow_credentials=True 在浏览器中不兼容（凭据模式不允许通配符），
+# 因此显式列出前端来源；后端不依赖 Cookie 鉴权。
+# 部署平台可通过 CORS_ORIGINS 环境变量（逗号分隔）覆盖默认列表。
+_default_cors_origins = [
+    "https://csijia020-wq.github.io",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8080",
+]
+_env_cors = os.getenv("CORS_ORIGINS", "").strip()
+CORS_ORIGINS = [o.strip() for o in _env_cors.split(",") if o.strip()] if _env_cors else _default_cors_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源
-    allow_credentials=True,
-    allow_methods=["*"],  # 允许所有方法
-    allow_headers=["*"],  # 允许所有头
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 注册路由
@@ -51,20 +63,26 @@ app.include_router(report_router)
 
 @app.get("/", include_in_schema=False)
 async def root():
-    """Serve the browser demo as the public entry point."""
-    return FileResponse(frontend_index)
+    """Serve the browser demo as the public entry point (docs 存在时) 或 API 说明。"""
+    if os.path.isfile(frontend_index):
+        return FileResponse(frontend_index)
+    return {"service": "VoC 体验异动分析 Agent API", "health": "/health"}
 
 
 @app.get("/index.html", include_in_schema=False)
 async def frontend_page():
     """Serve the demo page on the same path used by local static hosting."""
-    return FileResponse(frontend_index)
+    if os.path.isfile(frontend_index):
+        return FileResponse(frontend_index)
+    return {"service": "VoC 体验异动分析 Agent API", "health": "/health"}
 
 
 @app.get("/vibe_coding_prototype.html", include_in_schema=False)
 async def legacy_frontend_page():
     """Backward-compatible alias for the old prototype filename."""
-    return FileResponse(frontend_index)
+    if os.path.isfile(frontend_index):
+        return FileResponse(frontend_index)
+    return {"service": "VoC 体验异动分析 Agent API", "health": "/health"}
 
 
 @app.get("/health")

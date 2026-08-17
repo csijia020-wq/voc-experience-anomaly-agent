@@ -24,3 +24,8 @@ services:
         value: "60"
       - key: LLM_MAX_RETRIES
         value: "1"
+      # 前端来源（GitHub Pages / 本地开发），逗号分隔；有需要时可在控制台覆盖
+      - key: CORS_ORIGINS
+        value: "https://csijia020-wq.github.io,http://localhost:8000,http://localhost:8080"
+    # 注意：DEEPSEEK_API_KEY 为敏感变量，请在 Render 控制台
+    # （Dashboard -> 服务 -> Environment）手动配置，不要写入本文件或提交到仓库。
