@@ -88,6 +88,19 @@ class DeploymentContractTest(unittest.TestCase):
         # DEEPSEEK_API_KEY 不应写入 render.yaml（敏感变量需在控制台配置）
         self.assertNotIn("DEEPSEEK_API_KEY:", render_yaml)
 
+    def test_pages_workflow_injects_public_backend_url(self):
+        """GitHub Pages workflow 支持 AGENT_API_BASE_URL 注入；未配置时前端保持「后端未连接」状态。"""
+        workflow_path = os.path.join(ROOT, ".github", "workflows", "pages.yml")
+        self.assertTrue(os.path.exists(workflow_path))
+        with open(workflow_path, "r", encoding="utf-8") as f:
+            workflow = f.read()
+        self.assertIn("AGENT_API_BASE_URL", workflow)
+        self.assertIn("Inject public backend base URL", workflow)
+        self.assertIn("window.AGENT_API_BASE_URL", workflow)
+        # 未配置时明确保持空值（不注入任何地址）
+        self.assertIn("AGENT_API_BASE_URL not set", workflow)
+        self.assertIn("backend-unavailable", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
