@@ -25,9 +25,15 @@ app = FastAPI(
 
 # 挂载前端静态文件
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-frontend_dir = os.path.join(project_root, "project_delivery")
-frontend_index = os.path.join(frontend_dir, "vibe_coding_prototype.html")
+frontend_dir = os.path.join(project_root, "docs")
+frontend_index = os.path.join(frontend_dir, "index.html")
+output_dir = os.path.join(project_root, "output")
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+
+# 挂载本地 HTML 报告目录（s3plus-upload 本地落地产物，可通过 http://host/reports/xxx.html 访问，
+# 供前端 iframe 正常加载；不接真实 S3/CDN）
+os.makedirs(output_dir, exist_ok=True)
+app.mount("/reports", StaticFiles(directory=output_dir), name="reports")
 
 # CORS配置
 app.add_middleware(
@@ -49,9 +55,15 @@ async def root():
     return FileResponse(frontend_index)
 
 
-@app.get("/vibe_coding_prototype.html", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
 async def frontend_page():
     """Serve the demo page on the same path used by local static hosting."""
+    return FileResponse(frontend_index)
+
+
+@app.get("/vibe_coding_prototype.html", include_in_schema=False)
+async def legacy_frontend_page():
+    """Backward-compatible alias for the old prototype filename."""
     return FileResponse(frontend_index)
 
 

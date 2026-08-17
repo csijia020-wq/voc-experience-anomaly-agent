@@ -14,7 +14,7 @@ class GitHubPagesContractTest(unittest.TestCase):
             html = f.read()
 
         self.assertIn("VoC 体验异动分析 Agent", html)
-        self.assertIn("静态作品集演示版", html)
+        self.assertIn("实时联调版", html)
         self.assertIn("生成到餐客服上周周报", html)
         self.assertIn("本期万服", html)
         self.assertIn("120.47", html)
@@ -24,7 +24,8 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("不调用真实 DeepSeek", html)
         self.assertNotIn("DEEPSEEK_API_KEY", html)
         self.assertNotIn("api.deepseek.com", html)
-        self.assertNotIn("localhost:8000", html)
+        # 页面为「静态演示 + 本地后端」共用入口，API 通过 getApiBaseUrl 动态拼接；
+        # file: 协议下才回退 localhost，不硬编码生产地址。
 
     def test_static_portfolio_embeds_full_report_page(self):
         with open(STATIC_PAGE, "r", encoding="utf-8") as f:
@@ -39,17 +40,23 @@ class GitHubPagesContractTest(unittest.TestCase):
         self.assertIn("function renderReport(report)", html)
         self.assertIn("function renderDimensionSection", html)
         self.assertIn("function renderDimensionTables", html)
+        self.assertIn("function computeDimTops", html)
+        self.assertIn("function renderDimensionTops", html)
         self.assertIn("function updateChart", html)
         self.assertIn("const STATIC_REPORT_DATA", html)
         self.assertIn("renderReport(STATIC_REPORT_DATA)", html)
-        self.assertIn("renderDimensionSection('dim_city', '城市等级', dimensions['城市等级'], true)", html)
-        self.assertIn("renderDimensionSection('dim_category', '品类', dimensions['品类'])", html)
-        self.assertIn("renderDimensionSection('dim_event', '事件类别', dimensions['事件类别'])", html)
-        self.assertIn("renderDimensionSection('dim_channel', '进线渠道', dimensions['进线渠道'])", html)
-        self.assertIn("renderDimensionSection('dim_zone', '战区', dimensions['战区'])", html)
+        # 6 维度 Top3 推高/压低卡片 + 明细表
+        self.assertIn("Top3 推高", html)
+        self.assertIn("Top3 压低", html)
+        self.assertIn("renderDimensionSection('dim_city', '城市等级', getDimItems(dimensions, 'city_level'), true, getDimTops(dimensionTops, 'city_level'))", html)
+        self.assertIn("renderDimensionSection('dim_category', '一级门店品类', getDimItems(dimensions, 'store_category_level_1'), false, getDimTops(dimensionTops, 'store_category_level_1'))", html)
+        self.assertIn("renderDimensionSection('dim_event', '事件类别', getDimItems(dimensions, 'event_category'), false, getDimTops(dimensionTops, 'event_category'))", html)
+        self.assertIn("renderDimensionSection('dim_faq', '六级FAQ', getDimItems(dimensions, 'faq_level_6'), false, getDimTops(dimensionTops, 'faq_level_6'))", html)
+        self.assertIn("renderDimensionSection('dim_channel', '进线渠道', getDimItems(dimensions, 'incoming_channel'), false, getDimTops(dimensionTops, 'incoming_channel'))", html)
+        self.assertIn("renderDimensionSection('dim_zone', '一级战区', getDimItems(dimensions, 'warzone_level_1'), false, getDimTops(dimensionTops, 'warzone_level_1'))", html)
         self.assertIn("华南战区", html)
         self.assertIn("APP在线", html)
-        self.assertNotIn("/api/chat/stream", html)
+        self.assertIn("getApiBaseUrl()", html)
         self.assertNotIn("API_BASE_URL", html)
 
     def test_github_pages_workflow_exists(self):

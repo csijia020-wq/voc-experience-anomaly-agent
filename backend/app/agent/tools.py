@@ -6,11 +6,13 @@
 import sys
 import os
 import json
+import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from services.mock_data import mock_data_service
 from agent.tools import anomaly_calc, ANOMALY_CALC_TOOL
 from agent.tools import query_friday_data, QUERY_FRIDAY_TOOL
+
+logger = logging.getLogger(__name__)
 
 
 # 扩展TOOLS_DEFINITION，包含skill定义的工具
@@ -116,8 +118,6 @@ def execute_tool(tool_name: str, arguments: dict) -> dict:
         business = arguments.get("business", "到餐客服")
         period = arguments.get("period", "上周")
 
-        print(f"[DEBUG] execute_tool: {tool_name}, business={repr(business)}, period={repr(period)}")
-
         # Skill工具：query_friday_data
         if tool_name == "query_friday_data":
             result = query_friday_data(
@@ -134,38 +134,77 @@ def execute_tool(tool_name: str, arguments: dict) -> dict:
             daily_current = arguments.get("daily_current")
             daily_compare = arguments.get("daily_compare")
             dimension_availability = arguments.get("dimension_availability")
+            overall_base = arguments.get("overall_base") or arguments.get("overall")
 
             result = anomaly_calc(
                 current_data=current_data,
                 compare_data=compare_data,
                 daily_current=daily_current,
                 daily_compare=daily_compare,
-                dimension_availability=dimension_availability
+                dimension_availability=dimension_availability,
+                overall_base=overall_base
             )
             return result
 
         # 原有工具：query_business_data
         elif tool_name == "query_business_data":
-            try:
-                result = mock_data_service.query_data(business=business, dimension_type=None, period=period)
-                if isinstance(result, dict) and "error" not in result:
-                    return result
-                return {"error": f"查询失败: {result}"}
-            except Exception as e:
-                return {"error": str(e)}
+            query_result = query_friday_data(business=business, period=period, granularity="weekly")
+            if "error" in query_result:
+                return query_result
+            calc_result = anomaly_calc(
+                current_data=query_result["current_data"],
+                compare_data=query_result["compare_data"],
+                daily_current=query_result["daily_current"],
+                daily_compare=query_result["daily_compare"],
+                dimension_availability=query_result["dimension_availability"],
+                overall_base=query_result["overall"],
+            )
+            return {
+                "business": business,
+                "period": period,
+                "meta": query_result["meta"],
+                "overall_base": query_result["overall"],
+                "calc_result": calc_result,
+            }
 
         # 原有工具：get_daily_trend
         elif tool_name == "get_daily_trend":
-            trend_data = mock_data_service.get_daily_trend(business, period=period)
-            return {"trend": trend_data}
+            query_result = query_friday_data(business=business, period=period, granularity="weekly")
+            if "error" in query_result:
+                return query_result
+            calc_result = anomaly_calc(
+                current_data=query_result["current_data"],
+                compare_data=query_result["compare_data"],
+                daily_current=query_result["daily_current"],
+                daily_compare=query_result["daily_compare"],
+                dimension_availability=query_result["dimension_availability"],
+                overall_base=query_result["overall"],
+            )
+            return {"trend": calc_result["daily_trend"]}
 
         # 原有工具：get_dimension_factors
         elif tool_name == "get_dimension_factors":
             top_n = arguments.get("top_n", 3)
-            factors_data = mock_data_service.get_top_factors(business, top_n)
-            return factors_data
+            query_result = query_friday_data(business=business, period=period, granularity="weekly")
+            if "error" in query_result:
+                return query_result
+            calc_result = anomaly_calc(
+                current_data=query_result["current_data"],
+                compare_data=query_result["compare_data"],
+                daily_current=query_result["daily_current"],
+                daily_compare=query_result["daily_compare"],
+                dimension_availability=query_result["dimension_availability"],
+                overall_base=query_result["overall"],
+            )
+            return {
+                "top_up": calc_result["dim"]["top_up"][:top_n],
+                "top_down": calc_result["dim"]["top_down"][:top_n],
+            }
 
         else:
             return {"error": f"未知工具: {tool_name}"}
     except Exception as e:
+        # 工具执行异常统一转化为 {"error": ...}，交由上层（generate_report_stream）检查并阻断下游，
+        # 不再打印误导性的成功日志；异常细节仅写日志，避免把内部信息暴露给前端。
+        logger.warning("execute_tool(%s) 执行异常: %s: %s", tool_name, type(e).__name__, e)
         return {"error": str(e)}

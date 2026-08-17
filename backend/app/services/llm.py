@@ -141,6 +141,48 @@ class LLMService:
         except Exception as exc:
             raise self._to_service_error(exc) from exc
 
+    def chat_json(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = None,
+        max_tokens: int = None
+    ) -> Dict[str, Any]:
+        """同步调用 LLM 并要求返回合法 JSON 对象。
+
+        清理常见的 ```json 代码围栏后解析 JSON；若模型返回内容无法解析为
+        合法 JSON，抛 LLMServiceError(code=LLM_JSON_PARSE_ERROR)，由调用方
+        （如入口意图识别）捕获后降级到规则匹配。符合文档 4.3：LLM 优先，
+        规则降级。
+
+        Args:
+            messages: 消息列表
+            temperature: 温度参数
+            max_tokens: 最大 token 数
+
+        Returns:
+            解析后的 JSON 对象（dict）
+
+        Raises:
+            LLMServiceError: 模型返回内容无法解析为 JSON 时抛出。
+        """
+        raw = self.chat(messages, temperature=temperature, max_tokens=max_tokens)
+        text = (raw or "").strip()
+        if text.startswith("```json"):
+            text = text[len("```json"):]
+        elif text.startswith("```"):
+            text = text[len("```"):]
+        if text.endswith("```"):
+            text = text[:-len("```")]
+        text = text.strip()
+        try:
+            return json.loads(text)
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise LLMServiceError(
+                code="LLM_JSON_PARSE_ERROR",
+                user_message="模型返回结果无法解析，已降级到规则解析。",
+                detail=f"JSON parse failed: {type(exc).__name__}: {exc}",
+            ) from exc
+
     async def chat_stream(
         self,
         messages: List[Dict[str, str]],

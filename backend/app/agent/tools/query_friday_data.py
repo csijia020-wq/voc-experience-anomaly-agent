@@ -10,6 +10,25 @@ import random
 from datetime import date, datetime, timedelta
 
 
+STANDARD_DIMENSIONS = (
+    "city_level",
+    "event_category",
+    "faq_level_6",
+    "store_category_level_1",
+    "incoming_channel",
+    "warzone_level_1",
+)
+
+DIMENSION_DISPLAY_NAMES = {
+    "city_level": "城市等级",
+    "event_category": "事件类别",
+    "faq_level_6": "六级FAQ",
+    "store_category_level_1": "一级门店品类",
+    "incoming_channel": "进线渠道",
+    "warzone_level_1": "一级战区",
+}
+
+
 def _demo_deterministic() -> bool:
     """Demo模式默认稳定；显式设置 DEMO_DETERMINISTIC=false 才允许随机。"""
     return os.getenv("DEMO_DETERMINISTIC", "true").lower() != "false"
@@ -74,14 +93,27 @@ def query_friday_data(
             "supported_businesses": valid_businesses
         }
 
+    # 周期验证：缺周期或无法识别的周期不得静默默认为「上周」，必须明确报错（文档：缺参要澄清，不静默）
+    if not period or not str(period).strip():
+        return {
+            "error": "缺少分析周期，请补充周期后再查询，例如：上周 / 本周 / 上月 / 本月 / 2026W02 / 2026-03。",
+            "supported_periods": ["上周", "本周", "上月", "本月", "2026W02", "2026-03"],
+        }
+
     # 解析周期
     cfg = _resolve_period_config(period)
+    if cfg is None:
+        return {
+            "error": f"不支持的周期：{period}，支持的周期格式：上周 / 本周 / 上月 / 本月 / YYYYWww / YYYY-MM。",
+            "supported_periods": ["上周", "本周", "上月", "本月", "2026W02", "2026-03"],
+        }
 
     # 生成模拟数据
     current_rng = _rng_for(business, cfg, "yoy", granularity, "current_dimension")
     compare_rng = _rng_for(business, cfg, "yoy", granularity, "compare_dimension")
     current_data = _generate_dimension_data(business, cfg["current_weeks"], "current", current_rng)
     compare_data = _generate_dimension_data(business, cfg["compare_weeks"], "compare", compare_rng)
+    overall = _build_demo_overall_base(current_data, compare_data)
 
     # 生成日粒度数据
     daily_current = _generate_daily_data(
@@ -103,14 +135,10 @@ def query_friday_data(
         "compare_data": compare_data,
         "daily_current": daily_current,
         "daily_compare": daily_compare,
+        "overall": overall,
         "calibration_result": calibration_result,
         "dimension_availability": {
-            "城市等级": True,
-            "品类": True,
-            "事件类别": True,
-            "进线渠道": True,
-            "战区": True,
-            "FAQ": True
+            dim: True for dim in STANDARD_DIMENSIONS
         },
         "meta": {
             "dataset_id": _get_dataset_id(business, granularity),
@@ -166,8 +194,8 @@ def _resolve_period_config(period: str) -> Dict[str, Any]:
             "compare_label": f"{year-1}W{week_num} (去年同期)"
         }
 
-    # 默认返回上周
-    return _resolve_period_config("上周")
+    # 无法识别的周期：返回 None，由调用方明确报错，不静默默认「上周」
+    return None
 
 
 def _parse_explicit_week_period(period: str) -> Optional[tuple]:
@@ -255,12 +283,12 @@ def _generate_dimension_data(business: str, weeks: List[tuple], period: str, rng
     """生成维度明细数据"""
     rng = rng or random
     dimensions = {
-        "城市等级": ["一线城市", "二线城市", "三线城市", "四线城市", "五线城市"],
-        "品类": ["到店", "外卖", "闪购", "酒旅", "优选"],
-        "事件类别": ["支付问题", "退款问题", "质量问题", "账户问题", "配送问题", "会员服务"],
-        "进线渠道": ["APP在线", "小程序", "电话热线"],
-        "战区": ["华北战区", "华南战区", "华东战区", "华中战区", "西南战区", "西北战区"],
-        "FAQ": ["订单查询", "退款进度", "优惠券使用", "账户异常", "活动咨询"]
+        "city_level": ["一线城市", "二线城市", "三线城市", "四线城市", "五线城市"],
+        "event_category": ["支付问题", "退款问题", "质量问题", "账户问题", "配送问题", "会员服务"],
+        "faq_level_6": ["订单查询", "退款进度", "优惠券使用", "账户异常", "活动咨询"],
+        "store_category_level_1": ["到店", "外卖", "闪购", "酒旅", "优选"],
+        "incoming_channel": ["APP在线", "小程序", "电话热线"],
+        "warzone_level_1": ["华北战区", "华南战区", "华东战区", "华中战区", "西南战区", "西北战区"],
     }
 
     # 业务基础值
@@ -296,6 +324,40 @@ def _generate_dimension_data(business: str, weeks: List[tuple], period: str, rng
             })
 
     return data
+
+
+def _build_demo_overall_base(current_data: List[Dict], compare_data: List[Dict]) -> Dict[str, Any]:
+    """Build the overall base row used by anomaly_calc.
+
+    Demo compromise: the portfolio mock dataset has only repeated dimension
+    breakdown rows, not a real independent overall row. To avoid summing the
+    same business volume once per dimension, this derives the base from one
+    non-overlapping dimension group. In production this must come from an
+    independent overall dataset row supplied by friday-mcp.
+    """
+
+    def aggregate_one_partition(rows: List[Dict], service_key: str, order_key: str) -> Dict[str, int]:
+        grouped = {}
+        for row in rows:
+            dim_type = row.get("dimension_type", row.get("dim_type", ""))
+            grouped.setdefault(dim_type, {"total_service": 0, "total_order": 0})
+            grouped[dim_type]["total_service"] += int(row.get(service_key, 0) or 0)
+            grouped[dim_type]["total_order"] += int(row.get(order_key, 0) or 0)
+
+        preferred = ["city_level"]
+        for dim_type in preferred:
+            if dim_type in grouped:
+                return grouped[dim_type]
+
+        if grouped:
+            return max(grouped.values(), key=lambda item: item["total_order"])
+        return {"total_service": 0, "total_order": 0}
+
+    return {
+        "current": aggregate_one_partition(current_data, "current_service_count", "current_order_count"),
+        "compare": aggregate_one_partition(compare_data, "compare_service_count", "compare_order_count"),
+        "source": "demo_partition_fallback",
+    }
 
 
 def _generate_daily_data(weeks: List[tuple], period: str, rng=None) -> List[Dict]:

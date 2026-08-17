@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoC 体验异动分析 Agent | 静态作品集演示版</title>
+    <title>VoC 体验异动分析 Agent | 实时联调版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
@@ -52,6 +52,10 @@
         .chat-report-bubble .report-markdown { font-size: 14px; line-height: 1.75; }
         .chat-report-bubble .report-markdown h3 { margin-top: 0.75rem; }
         .chat-report-bubble .report-markdown table { min-width: 520px; }
+        .error-banner { border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; }
+        .status-timeline { border: 1px solid #e5e7eb; background: #f9fafb; }
+        .report-frame-wrap { border: 1px solid #e5e7eb; background: #fff; }
+        .report-frame { width: 100%; height: 720px; border: 0; background: #fff; }
         @media (max-width: 640px) {
             .metric-label { white-space: normal; }
             .metric-value { font-size: 1.85rem; }
@@ -74,7 +78,7 @@
                         <span class="font-bold text-lg text-gray-800">VoC 体验异动分析 Agent</span>
                     </div>
                     <span class="text-gray-300">|</span>
-                    <span class="text-red-600 font-medium">静态作品集演示版 · 不调用真实 DeepSeek</span>
+                    <span class="text-red-600 font-medium">实时联调版 · 通过 SSE 连接后端 Agent</span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <button onclick="showTaskModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
@@ -198,420 +202,133 @@
         <!-- 报告展示页面 -->
         <div id="reportPanel" class="bg-white rounded-b-xl card-shadow min-h-[600px] hidden">
             <!-- 报告头部 -->
-            <div class="border-b border-gray-200 p-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-2xl font-bold text-red-600">到餐客服 体验异动分析周报</h1>
-                        <p class="text-gray-500 mt-1">2026W12 vs 2025W12 | 2026-03-16 ~ 2026-03-22</p>
+            <div class="border-b border-gray-200 p-6 lg:p-8">
+                <div class="flex flex-wrap justify-between items-start gap-4">
+                    <div class="min-w-0">
+                        <h1 class="text-2xl lg:text-3xl font-bold text-red-600 leading-snug">到餐客服 体验异动分析周报</h1>
+                        <p class="text-gray-500 mt-2" id="reportPeriod">2026W26（上周） vs 2025W26（去年同期）</p>
+                        <p class="text-xs text-gray-400 mt-2" id="reportDataNote">本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。</p>
                     </div>
-                    <div class="text-right">
-                        <div class="text-sm text-gray-500">报告生成时间</div>
-                        <div class="text-gray-700">2026-03-23 10:30:45</div>
+                    <div class="text-right shrink-0">
+                        <div class="text-xs text-gray-400">报告生成时间</div>
+                        <div class="text-gray-700 font-medium" id="reportGenTime">--</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 核心指标卡片 -->
+            <!-- 模块1：核心指标 -->
             <div class="p-5 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-orange-50">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-800 text-base">核心指标</h3>
+                    <span class="text-xs text-gray-400">万服 = 服务量 ÷ 订单量 × 10000</span>
+                </div>
                 <div id="metricCards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
                     <div class="metric-card bg-white rounded-xl p-5 card-shadow">
                         <div class="metric-label mb-2">本期人工万服</div>
-                        <div class="metric-value text-3xl font-bold text-gray-800">12.50</div>
-                        <div class="text-xs text-gray-400 mt-1">2026W12</div>
+                        <div class="metric-value text-3xl font-bold text-gray-800">--</div>
+                        <div class="text-xs text-gray-400 mt-1" id="metricCurrentSub">--</div>
                     </div>
                     <div class="metric-card bg-white rounded-xl p-5 card-shadow">
                         <div class="metric-label mb-2">去年同期万服</div>
-                        <div class="metric-value text-3xl font-bold text-gray-600">11.80</div>
-                        <div class="text-xs text-gray-400 mt-1">2025W12</div>
+                        <div class="metric-value text-3xl font-bold text-gray-600">--</div>
+                        <div class="text-xs text-gray-400 mt-1" id="metricCompareSub">--</div>
                     </div>
                     <div class="metric-card bg-white rounded-xl p-5 card-shadow">
                         <div class="metric-label mb-2">万服同比</div>
                         <div class="metric-value text-3xl font-bold text-gray-700">--</div>
-                        <div class="text-xs text-gray-400 mt-1">等待生成</div>
+                        <div class="text-xs text-gray-400 mt-1" id="metricYoySub">--</div>
                     </div>
                     <div class="metric-card bg-white rounded-xl p-5 card-shadow">
                         <div class="metric-label mb-2">服务量变化</div>
                         <div class="metric-value text-3xl font-bold text-gray-800">--</div>
-                        <div class="text-xs text-gray-400 mt-1">等待生成</div>
+                        <div class="text-xs text-gray-400 mt-1" id="metricServiceSub">--</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 综合分析 -->
+            <!-- 模块2：综合结论 -->
             <div class="p-5 lg:p-6 border-b border-gray-200">
                 <div class="report-summary-card gradient-border rounded-xl p-5 lg:p-6">
                     <h3 class="font-bold text-gray-800 mb-4 flex items-center">
                         <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        综合分析
+                        综合结论
                     </h3>
                     <div id="reportSummary" class="report-markdown">
-                        本报告基于模拟数据生成。请先在对话框输入“生成到餐客服上周周报”，系统将自动更新核心指标、主要关联因素和维度明细。
+                        本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。请先在对话框输入“生成到餐客服上周周报”，系统将自动更新核心指标、主要关联因素和维度明细。
                     </div>
                     <div id="factorCards" class="mt-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <div class="bg-red-50 rounded-lg p-3">
-                            <div class="text-red-600 font-medium text-sm mb-1">▲ 推高关联因素</div>
+                        <div class="bg-red-50 rounded-lg p-4">
+                            <div class="text-red-600 font-medium text-sm mb-2">▲ 主要推高因素</div>
                             <ul class="text-sm text-gray-600 space-y-1">
-                                <li>• 二线城市（城市等级）：上升 6.41%（+1,533次）</li>
-                                <li>• 配送问题（事件类别）：上升 10.42%（+778次）</li>
+                                <li>• 暂无数据，生成报告后展示</li>
                             </ul>
                         </div>
-                        <div class="bg-blue-50 rounded-lg p-3">
-                            <div class="text-blue-600 font-medium text-sm mb-1">▼ 压低关联因素</div>
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="text-blue-600 font-medium text-sm mb-2">▼ 主要压低因素</div>
                             <ul class="text-sm text-gray-600 space-y-1">
-                                <li>• 五线城市（城市等级）：下降 1.01%（-189次）</li>
+                                <li>• 暂无数据，生成报告后展示</li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 日万服趋势图 -->
+            <!-- 模块3：日万服趋势图 -->
             <div class="p-6 border-b border-gray-200">
-                <h3 class="font-bold text-gray-800 mb-4">日万服趋势</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-800 text-base">日度趋势</h3>
+                    <span class="text-xs text-gray-400">本期 vs 对比期日万服走势</span>
+                </div>
                 <div id="dailyTrendChart" class="w-full h-64"></div>
             </div>
 
             <!-- 维度Tab分析 -->
             <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-800 text-base">6 维度拆解</h3>
+                    <span class="text-xs text-gray-400">按 wanfu_contribution 归因排序 · service_change_ratio 仅辅助说明服务量规模变化</span>
+                </div>
                 <div class="flex space-x-4 border-b border-gray-200 mb-6">
                     <button onclick="switchDimTab('city')" class="dim-tab py-2 px-4 text-sm font-medium text-red-600 border-b-2 border-red-600" data-dim="city">城市等级</button>
-                    <button onclick="switchDimTab('category')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="category">品类</button>
+                    <button onclick="switchDimTab('category')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="category">一级门店品类</button>
                     <button onclick="switchDimTab('event')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="event">事件类别</button>
+                    <button onclick="switchDimTab('faq')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="faq">六级FAQ</button>
                     <button onclick="switchDimTab('channel')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="channel">进线渠道</button>
-                    <button onclick="switchDimTab('zone')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="zone">战区</button>
+                    <button onclick="switchDimTab('zone')" class="dim-tab py-2 px-4 text-sm font-medium text-gray-500 hover:text-red-600" data-dim="zone">一级战区</button>
                 </div>
 
-                <!-- 城市等级维度 -->
-                <div id="dim_city" class="dim-content">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="col-span-2">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="text-left text-gray-500 border-b">
-                                        <th class="pb-2 font-medium">城市等级</th>
-                                        <th class="pb-2 font-medium text-right">本期服务量</th>
-                                        <th class="pb-2 font-medium text-right">去年同期</th>
-                                        <th class="pb-2 font-medium text-right">变化量</th>
-                                        <th class="pb-2 font-medium text-right">万服同比</th>
-                                    <th class="pb-2 font-medium text-right">服务量变化占比</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="border-b border-gray-100 bg-red-50">
-                                        <td class="py-2 font-medium text-red-600">▲ 二线城市</td>
-                                        <td class="py-2 text-right">18,456</td>
-                                        <td class="py-2 text-right">16,923</td>
-                                        <td class="py-2 text-right text-red-600">+1,533</td>
-                                        <td class="py-2 text-right text-red-600">+6.41%</td>
-                                        <td class="py-2 text-right text-red-600 font-medium">+2.16</td>
-                                    </tr>
-                                    <tr class="border-b border-gray-100">
-                                        <td class="py-2">一线城市</td>
-                                        <td class="py-2 text-right">15,234</td>
-                                        <td class="py-2 text-right">13,856</td>
-                                        <td class="py-2 text-right text-red-600">+1,378</td>
-                                        <td class="py-2 text-right text-red-600">+5.52%</td>
-                                        <td class="py-2 text-right text-red-600">+2.84</td>
-                                    </tr>
-                                    <tr class="border-b border-gray-100">
-                                        <td class="py-2">三线城市</td>
-                                        <td class="py-2 text-right">9,823</td>
-                                        <td class="py-2 text-right">9,234</td>
-                                        <td class="py-2 text-right text-red-600">+589</td>
-                                        <td class="py-2 text-right text-red-600">+1.81%</td>
-                                        <td class="py-2 text-right text-red-600">+0.62</td>
-                                    </tr>
-                                    <tr class="border-b border-gray-100">
-                                        <td class="py-2">四线城市</td>
-                                        <td class="py-2 text-right">4,567</td>
-                                        <td class="py-2 text-right">4,123</td>
-                                        <td class="py-2 text-right text-red-600">+444</td>
-                                        <td class="py-2 text-right text-red-600">+5.56%</td>
-                                        <td class="py-2 text-right text-red-600">+0.21</td>
-                                    </tr>
-                                    <tr class="border-b border-gray-100 bg-blue-50">
-                                        <td class="py-2 text-blue-600">▼ 五线城市</td>
-                                        <td class="py-2 text-right">2,345</td>
-                                        <td class="py-2 text-right">2,156</td>
-                                        <td class="py-2 text-right text-blue-600">-189</td>
-                                        <td class="py-2 text-right text-blue-600">-1.01%</td>
-                                        <td class="py-2 text-right text-blue-600">-0.02</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="bg-gray-50 rounded-xl p-4">
-                            <h4 class="font-medium text-gray-700 mb-3">整体分析</h4>
-                            <div class="space-y-3 text-sm">
-                                <div>
-                                    <div class="text-gray-500">整体万服同比</div>
-                                    <div id="overallYoySummary" class="text-lg font-bold text-gray-700">--</div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-500">增速最快（推高）</div>
-                                    <div id="fastestUpName" class="font-medium">--</div>
-                                    <div id="fastestUpValue" class="text-red-600">--</div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-500">变化占比最高（推高）</div>
-                                    <div id="topUpRatioName" class="font-medium">--</div>
-                                    <div id="topUpRatioValue" class="text-red-600">--</div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-500">压低最大</div>
-                                    <div id="topDownRatioName" class="font-medium text-blue-600">--</div>
-                                    <div id="topDownRatioValue" class="text-blue-600">--</div>
-                                </div>
-                            </div>
+                <!-- 模块4：6维度拆解（每维度 Top3 推高/压低 + 明细表，由 JS 按 dimension_tops 渲染） -->
+                <div class="dim-panel" id="dim_city" data-dimkey="city_level"></div>
+                <div class="dim-panel hidden" id="dim_category" data-dimkey="store_category_level_1"></div>
+                <div class="dim-panel hidden" id="dim_event" data-dimkey="event_category"></div>
+                <div class="dim-panel hidden" id="dim_faq" data-dimkey="faq_level_6"></div>
+                <div class="dim-panel hidden" id="dim_channel" data-dimkey="incoming_channel"></div>
+                <div class="dim-panel hidden" id="dim_zone" data-dimkey="warzone_level_1"></div>
+            </div>
+
+            <!-- 模块5：明细与告警 -->
+            <div class="p-5 lg:p-6 border-t border-gray-200 bg-gray-50">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    明细与告警
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-xl p-4">
+                        <div class="font-medium text-gray-700 mb-2">告警列表</div>
+                        <div id="alertList" class="text-sm text-gray-600 space-y-1">
+                            <div class="text-gray-400">暂无可展示告警，请生成报告后查看。</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- 品类维度 -->
-                <div id="dim_category" class="dim-content hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-gray-500 border-b">
-                                <th class="pb-2 font-medium">品类</th>
-                                <th class="pb-2 font-medium text-right">本期服务量</th>
-                                <th class="pb-2 font-medium text-right">去年同期</th>
-                                <th class="pb-2 font-medium text-right">变化量</th>
-                                <th class="pb-2 font-medium text-right">万服同比</th>
-                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-gray-100 bg-red-50">
-                                <td class="py-2 font-medium text-red-600">▲ 到店</td>
-                                <td class="py-2 text-right">12,345</td>
-                                <td class="py-2 text-right">11,234</td>
-                                <td class="py-2 text-right text-red-600">+1,111</td>
-                                <td class="py-2 text-right text-red-600">+4.51%</td>
-                                <td class="py-2 text-right text-red-600 font-medium">+1.61</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">外卖</td>
-                                <td class="py-2 text-right">23,456</td>
-                                <td class="py-2 text-right">21,567</td>
-                                <td class="py-2 text-right text-red-600">+1,889</td>
-                                <td class="py-2 text-right text-red-600">+4.17%</td>
-                                <td class="py-2 text-right text-red-600">+1.43</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">闪购</td>
-                                <td class="py-2 text-right">5,678</td>
-                                <td class="py-2 text-right">5,123</td>
-                                <td class="py-2 text-right text-red-600">+555</td>
-                                <td class="py-2 text-right text-red-600">+5.98%</td>
-                                <td class="py-2 text-right text-red-600">+1.04</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">酒旅</td>
-                                <td class="py-2 text-right">3,456</td>
-                                <td class="py-2 text-right">3,234</td>
-                                <td class="py-2 text-right text-red-600">+222</td>
-                                <td class="py-2 text-right text-red-600">+0.63%</td>
-                                <td class="py-2 text-right text-red-600">+0.24</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">优选</td>
-                                <td class="py-2 text-right">2,345</td>
-                                <td class="py-2 text-right">2,156</td>
-                                <td class="py-2 text-right text-red-600">+189</td>
-                                <td class="py-2 text-right text-red-600">+0.49%</td>
-                                <td class="py-2 text-right text-red-600">+0.16</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 事件类别维度 -->
-                <div id="dim_event" class="dim-content hidden">
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                        <div class="flex items-center text-yellow-700">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                            <span class="font-medium">注意事项</span>
-                        </div>
-                        <ul class="mt-2 text-sm text-yellow-600 space-y-1">
-                            <li>• "新增分类-会员服务"为本期新增事件分类，可能导致数据虚高</li>
-                            <li>• "新增分类-会员服务"N/A%疑为标注规则调整，建议排除后分析真实趋势</li>
-                        </ul>
+                    <div class="bg-white rounded-xl p-4">
+                        <div class="font-medium text-gray-700 mb-2">不可用维度</div>
+                        <div id="unavailableDims" class="text-sm text-gray-600">无</div>
                     </div>
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-gray-500 border-b">
-                                <th class="pb-2 font-medium">事件类别</th>
-                                <th class="pb-2 font-medium text-right">本期服务量</th>
-                                <th class="pb-2 font-medium text-right">去年同期</th>
-                                <th class="pb-2 font-medium text-right">变化量</th>
-                                <th class="pb-2 font-medium text-right">万服同比</th>
-                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-gray-100 bg-red-50">
-                                <td class="py-2 font-medium text-red-600">▲ 支付问题</td>
-                                <td class="py-2 text-right">567</td>
-                                <td class="py-2 text-right">456</td>
-                                <td class="py-2 text-right text-red-600">+111</td>
-                                <td class="py-2 text-right text-red-600">+12.34%</td>
-                                <td class="py-2 text-right text-red-600 font-medium">+3.69</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">退款问题</td>
-                                <td class="py-2 text-right">6,567</td>
-                                <td class="py-2 text-right">6,123</td>
-                                <td class="py-2 text-right text-red-600">+444</td>
-                                <td class="py-2 text-right text-red-600">+3.77%</td>
-                                <td class="py-2 text-right text-red-600">+1.41</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">质量问题</td>
-                                <td class="py-2 text-right">4,321</td>
-                                <td class="py-2 text-right">3,987</td>
-                                <td class="py-2 text-right text-red-600">+334</td>
-                                <td class="py-2 text-right text-red-600">+3.31%</td>
-                                <td class="py-2 text-right text-red-600">+1.21</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">账户问题</td>
-                                <td class="py-2 text-right">1,234</td>
-                                <td class="py-2 text-right">1,123</td>
-                                <td class="py-2 text-right text-red-600">+111</td>
-                                <td class="py-2 text-right text-red-600">+4.47%</td>
-                                <td class="py-2 text-right text-red-600">+1.60</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">配送问题</td>
-                                <td class="py-2 text-right">8,234</td>
-                                <td class="py-2 text-right">7,456</td>
-                                <td class="py-2 text-right text-red-600">+778</td>
-                                <td class="py-2 text-right text-red-600">+2.42%</td>
-                                <td class="py-2 text-right text-red-600">+0.87</td>
-                            </tr>
-                            <tr class="border-b border-gray-100 bg-yellow-50">
-                                <td class="py-2 text-yellow-600">★ 新增-会员服务</td>
-                                <td class="py-2 text-right">890</td>
-                                <td class="py-2 text-right">0</td>
-                                <td class="py-2 text-right">+890</td>
-                                <td class="py-2 text-right text-yellow-600">N/A</td>
-                                <td class="py-2 text-right text-yellow-600">N/A</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
-
-                <!-- 进线渠道维度 -->
-                <div id="dim_channel" class="dim-content hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-gray-500 border-b">
-                                <th class="pb-2 font-medium">进线渠道</th>
-                                <th class="pb-2 font-medium text-right">本期服务量</th>
-                                <th class="pb-2 font-medium text-right">去年同期</th>
-                                <th class="pb-2 font-medium text-right">变化量</th>
-                                <th class="pb-2 font-medium text-right">万服同比</th>
-                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">APP在线</td>
-                                <td class="py-2 text-right">12,345</td>
-                                <td class="py-2 text-right">11,234</td>
-                                <td class="py-2 text-right text-red-600">+1,111</td>
-                                <td class="py-2 text-right text-red-600">+4.51%</td>
-                                <td class="py-2 text-right text-red-600">+1.61</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">小程序</td>
-                                <td class="py-2 text-right">5,678</td>
-                                <td class="py-2 text-right">5,123</td>
-                                <td class="py-2 text-right text-red-600">+555</td>
-                                <td class="py-2 text-right text-red-600">+5.98%</td>
-                                <td class="py-2 text-right text-red-600">+2.08</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">电话热线</td>
-                                <td class="py-2 text-right">8,234</td>
-                                <td class="py-2 text-right">7,456</td>
-                                <td class="py-2 text-right text-red-600">+778</td>
-                                <td class="py-2 text-right text-red-600">+2.42%</td>
-                                <td class="py-2 text-right text-red-600">+0.87</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 战区维度 -->
-                <div id="dim_zone" class="dim-content hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-gray-500 border-b">
-                                <th class="pb-2 font-medium">战区</th>
-                                <th class="pb-2 font-medium text-right">本期服务量</th>
-                                <th class="pb-2 font-medium text-right">去年同期</th>
-                                <th class="pb-2 font-medium text-right">变化量</th>
-                                <th class="pb-2 font-medium text-right">万服同比</th>
-                                <th class="pb-2 font-medium text-right">服务量变化占比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-gray-100 bg-red-50">
-                                <td class="py-2 font-medium text-red-600">▲ 华北战区</td>
-                                <td class="py-2 text-right">6,234</td>
-                                <td class="py-2 text-right">5,678</td>
-                                <td class="py-2 text-right text-red-600">+556</td>
-                                <td class="py-2 text-right text-red-600">+6.25%</td>
-                                <td class="py-2 text-right text-red-600 font-medium">+2.18</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">华南战区</td>
-                                <td class="py-2 text-right">7,456</td>
-                                <td class="py-2 text-right">6,823</td>
-                                <td class="py-2 text-right text-red-600">+633</td>
-                                <td class="py-2 text-right text-red-600">+4.84%</td>
-                                <td class="py-2 text-right text-red-600">+1.71</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">华东战区</td>
-                                <td class="py-2 text-right">9,234</td>
-                                <td class="py-2 text-right">8,456</td>
-                                <td class="py-2 text-right text-red-600">+778</td>
-                                <td class="py-2 text-right text-red-600">+4.22%</td>
-                                <td class="py-2 text-right text-red-600">+1.50</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">华中战区</td>
-                                <td class="py-2 text-right">4,567</td>
-                                <td class="py-2 text-right">4,234</td>
-                                <td class="py-2 text-right text-red-600">+333</td>
-                                <td class="py-2 text-right text-red-600">+3.22%</td>
-                                <td class="py-2 text-right text-red-600">+1.14</td>
-                            </tr>
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2">西南战区</td>
-                                <td class="py-2 text-right">3,456</td>
-                                <td class="py-2 text-right">3,234</td>
-                                <td class="py-2 text-right text-red-600">+222</td>
-                                <td class="py-2 text-right text-red-600">+0.63%</td>
-                                <td class="py-2 text-right text-red-600">+0.24</td>
-                            </tr>
-                            <tr class="border-b border-gray-100 bg-blue-50">
-                                <td class="py-2 text-blue-600">▼ 西北战区</td>
-                                <td class="py-2 text-right">2,345</td>
-                                <td class="py-2 text-right">2,156</td>
-                                <td class="py-2 text-right text-blue-600">-189</td>
-                                <td class="py-2 text-right text-blue-600">-1.01%</td>
-                                <td class="py-2 text-right text-blue-600">-0.02</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <p class="text-xs text-gray-400 mt-3">* 归因排序使用 wanfu_contribution（万服波动贡献）；service_change_ratio（服务量变化占比）仅辅助说明服务量规模变化，两者独立展示。*</p>
             </div>
         </div>
     </main>
@@ -651,6 +368,16 @@
                             </select>
                         </div>
                     </div>
+                    <!-- 创建前确认（本地 Demo 配置管理，确认后才写入 output/scheduled_tasks.json） -->
+                    <div id="taskConfirmArea" class="hidden mt-3 p-4 border border-amber-300 bg-amber-50 rounded-lg">
+                        <div class="text-sm font-medium text-amber-800 mb-1">请确认定时任务配置</div>
+                        <div id="taskConfirmText" class="text-sm text-amber-700 mb-3"></div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="confirmCreateTask()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">确认创建</button>
+                            <button onclick="cancelCreateTask()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">取消</button>
+                        </div>
+                        <p class="text-xs text-amber-600 mt-2">* 本页为本地 Demo 定时任务配置管理，仅保存配置到本地 JSON 文件，不会真实到点触发，也不包含消息分发与文档同步等外部能力。*</p>
+                    </div>
                     <button onclick="createTask()" class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
                         创建任务
                     </button>
@@ -658,30 +385,9 @@
 
                 <!-- 任务列表 -->
                 <div>
-                    <h4 class="font-medium text-gray-700 mb-3">当前定时任务</h4>
+                    <h4 class="font-medium text-gray-700 mb-3">当前定时任务（Demo Mock 本地配置，非真实调度）</h4>
                     <div id="taskList" class="space-y-3">
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <div class="font-medium text-gray-800">到餐客服 周报</div>
-                                <div class="text-sm text-gray-500">每周一 09:00 触发</div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">运行中</span>
-                                <button class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">暂停</button>
-                                <button class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition">删除</button>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <div class="font-medium text-gray-800">闪购客服 周报</div>
-                                <div class="text-sm text-gray-500">每周二 09:00 触发</div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">已暂停</span>
-                                <button class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">恢复</button>
-                                <button class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition">删除</button>
-                            </div>
-                        </div>
+                        <div class="text-sm text-gray-500">加载中...</div>
                     </div>
                 </div>
             </div>
@@ -1259,7 +965,7 @@
                               }
                     ]
           },
-          "summary": "【模拟数据说明】本报告基于项目内模拟数据生成，仅用于求职作品集演示。<br>【核心指标】到餐客服上周本期万服为120.47，对比期万服为126.72，同比下降-4.94%，差值为-6.25。服务量为92568，订单量为7684020。<br>【主要推高因素】华南战区（战区，服务量变化占比0.48%）、APP在线（进线渠道，服务量变化占比0.48%）、质量问题（事件类别，服务量变化占比0.37%）。<br>【主要压低因素】退款进度（FAQ，服务量变化占比-0.04%）、五线城市（城市等级，服务量变化占比-0.06%）、配送问题（事件类别，服务量变化占比-0.08%）。<br>【口径说明】服务量变化占比 = 某因素服务量变化 / 本期整体服务量，用于衡量因素变化与整体异动的相对关联程度，不能证明因果关系。<br>【模型状态】DeepSeek 调用失败，当前展示的是基于 anomaly_calc 计算结果的降级报告。错误信息：实时模型暂时不可用，系统已使用结构化计算结果生成降级报告。",
+          "summary": "【模拟数据说明】本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。<br>【核心指标】到餐客服上周本期万服为120.47，对比期万服为126.72，同比下降-4.94%，差值为-6.25。服务量为92568，订单量为7684020。<br>【主要推高因素】华南战区（一级战区，万服波动贡献+0.48次/万单）、APP在线（进线渠道，万服波动贡献+0.48次/万单）、质量问题（事件类别，万服波动贡献+0.37次/万单）。<br>【主要压低因素】退款进度（六级FAQ，万服波动贡献-0.04次/万单）、五线城市（城市等级，万服波动贡献-0.06次/万单）、配送问题（事件类别，万服波动贡献-0.08次/万单）。<br>【口径说明】归因排序使用万服波动贡献（次/万单）；服务量变化占比仅辅助说明服务量规模变化，不能证明因果关系。<br>【模型状态】DeepSeek 调用失败，当前展示的是基于 anomaly_calc 计算结果的降级报告。错误信息：实时模型暂时不可用，系统已使用结构化计算结果生成降级报告。",
           "calc_result": {
                     "overall": {
                               "current": 120.47,
@@ -1792,7 +1498,19 @@
                                         "delta": 2.0
                               }
                     ],
-                    "alerts": [],
+                    "alerts": [
+                              {
+                                        "type": "new_category",
+                                        "name": "会员服务",
+                                        "desc": "本期新增事件分类，可能导致数据虚高，建议排除后分析"
+                              },
+                              {
+                                        "type": "extreme_value",
+                                        "name": "退款进度",
+                                        "yoy": 666.1,
+                                        "desc": "变化幅度过大（YoY 666.1%），疑似口径或分类调整，建议人工核查"
+                              }
+                    ],
                     "dimension_availability": {
                               "城市等级": true,
                               "品类": true,
@@ -1817,19 +1535,26 @@
                     ],
                     "granularity": "weekly"
           },
-          "data_note": "本项目使用模拟数据，仅用于求职作品集演示，不代表真实生产数据。",
+          "data_note": "本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。",
           "llm_error": "实时模型暂时不可用，系统已使用结构化计算结果生成降级报告。",
           "llm_error_code": "LLM_CONNECTION_ERROR"
 };
 
         const STATIC_THINKING_STEPS = [
             ['intent_recognition', '识别为生成周报；业务为到餐客服；时间为上周；对比方式为去年同期。'],
-            ['data_query', '读取作品集内置的固定模拟 VoC 数据，生成周粒度指标、日趋势和维度明细。'],
-            ['anomaly_calc', '计算本期万服、去年同期万服、同比变化、服务量变化占比，并按维度排序主要因素。'],
-            ['report_generation', '静态作品集版不调用真实 DeepSeek，直接展示与后端降级报告一致的结构化报告。']
+            ['parameter_validation', '参数校验通过：业务与周期均为有效参数。'],
+            ['data_query', '读取作品集内置的固定模拟 VoC 数据，生成周粒度指标、日趋势和 6 维度明细。'],
+            ['calibration', '数据口径自校验通过：万服强制走「服务量÷订单量×10000」口径。'],
+            ['anomaly_calc', '计算本期万服、去年同期万服、同比变化、万服波动贡献与服务量变化占比，并按维度排序主要因素。'],
+            ['report_generation', '静态作品集版不调用真实 DeepSeek，直接展示与后端降级报告一致的结构化报告。'],
+            ['html_generation', '生成本地 5 模块 HTML 报告（Demo Mock 本地渲染，非真实 S3 上传）。']
         ];
 
         let currentReportData = STATIC_REPORT_DATA;
+
+        // 多轮对话历史（用于槽位继承：缺业务/周期时从历史补全，不静默默认）
+        let chatHistory = [];
+        let currentAssistantReply = '';
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1865,7 +1590,7 @@
                 activeButton.classList.remove('text-gray-500');
             }
 
-            document.querySelectorAll('.dim-content').forEach(content => {
+            document.querySelectorAll('.dim-panel').forEach(content => {
                 content.classList.add('hidden');
             });
             const activeContent = document.getElementById(`dim_${dim}`);
@@ -1874,31 +1599,186 @@
             }
         }
 
-        function sendMessage() {
+        function getApiBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:8000';
+            }
+            return window.location.origin;
+        }
+
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
 
             const messageList = document.getElementById('messageList');
-            messageList.innerHTML = '';
+            // 不清空历史，保留多轮澄清对话
+            clearErrorBanner();
+            resetTypewriter();
+            currentAssistantReply = '';
             addMessage(message, 'user');
+            // 当前 user 消息进入历史；发送给后端的历史为「当前消息之前」的部分
+            chatHistory.push({ role: 'user', content: message });
             input.value = '';
             document.getElementById('welcomeArea').classList.add('hidden');
             document.getElementById('loadingArea').classList.remove('hidden');
-            document.getElementById('loadingText').textContent = '正在执行静态演示链路...';
+            document.getElementById('loadingText').textContent = '正在连接后端 Agent...';
+            ensureStatusPanel();
 
-            STATIC_THINKING_STEPS.forEach((item, index) => {
-                window.setTimeout(() => {
-                    handleThinking({ step: item[0], content: item[1] });
-                    document.getElementById('loadingText').textContent = `${item[1]} ✓`;
-                    if (index === STATIC_THINKING_STEPS.length - 1) {
-                        window.setTimeout(() => {
-                            handleText(STATIC_REPORT_DATA.summary);
-                            handleReport(STATIC_REPORT_DATA);
-                        }, 360);
-                    }
-                }, 420 * (index + 1));
+            try {
+                const response = await fetch(`${getApiBaseUrl()}/api/chat/stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, history: chatHistory.slice(0, -1) })
+                });
+
+                if (!response.ok || !response.body) {
+                    throw new Error(`流式接口请求失败：HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                // 通过 ReadableStream 逐帧解析 SSE 事件，实现了 Agent 思考过程的实时可见性，提升了用户对 AI 系统的信任感。
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    buffer = parseSseBuffer(buffer, handleSseEvent);
+                }
+
+                buffer += decoder.decode();
+                parseSseBuffer(buffer, handleSseEvent);
+            } catch (error) {
+                handleError(error.message || String(error));
+            }
+        }
+
+        function parseSseBuffer(buffer, onEvent) {
+            const frames = buffer.split(/\n\n/);
+            const rest = frames.pop() || '';
+
+            frames.forEach(frame => {
+                const data = frame
+                    .split(/\n/)
+                    .filter(line => line.startsWith('data:'))
+                    .map(line => line.slice(5).trimStart())
+                    .join('\n');
+
+                if (!data) return;
+                try {
+                    onEvent(JSON.parse(data));
+                } catch (error) {
+                    handleError(`SSE 数据解析失败：${error.message}`);
+                }
             });
+
+            return rest;
+        }
+
+        function handleSseEvent(payload) {
+            const event = payload.event || payload.type;
+            const data = payload.data;
+
+            if (event === 'step') {
+                handleStep(data);
+            } else if (event === 'thinking') {
+                handleThinking(data);
+            } else if (event === 'text') {
+                handleText(data);
+            } else if (event === 'report') {
+                handleReport(data);
+            } else if (event === 'done') {
+                document.getElementById('loadingArea').classList.add('hidden');
+                handleStep({ step: 'done', status: 'completed', message: data?.message || '流程结束', task_id: data?.task_id });
+                commitAssistantReply();
+            } else if (event === 'error') {
+                handleError(data);
+            }
+        }
+
+        function commitAssistantReply() {
+            // 把累积的助手回复文本 push 到多轮历史，供后续槽位继承
+            if (currentAssistantReply && currentAssistantReply.trim()) {
+                chatHistory.push({ role: 'assistant', content: currentAssistantReply.trim() });
+            }
+            currentAssistantReply = '';
+        }
+
+        function ensureStatusPanel() {
+            const messageList = document.getElementById('messageList');
+            messageList.classList.remove('hidden');
+            let panel = document.getElementById('agentStatusPanel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'agentStatusPanel';
+                panel.className = 'status-timeline rounded-xl p-4 text-sm text-gray-700 space-y-2';
+                panel.innerHTML = '<div class="font-medium text-gray-800">Agent 执行进度</div><div id="agentStepList" class="space-y-1"></div>';
+                messageList.appendChild(panel);
+            }
+            return panel;
+        }
+
+        function handleStep(stepData = {}) {
+            const stepNames = {
+                intent_recognition: '意图识别',
+                parameter_validation: '参数校验',
+                data_query: '取数',
+                calibration: '口径自校验',
+                anomaly_calc: '计算',
+                report_generation: '报告生成',
+                html_generation: 'HTML 生成',
+                done: '完成'
+            };
+            const panel = ensureStatusPanel();
+            const stepList = panel.querySelector('#agentStepList');
+            const step = stepData.step || 'unknown';
+            const status = stepData.status || 'running';
+            const message = stepData.message || stepNames[step] || step;
+            const icon = status === 'completed' ? '✅' : status === 'failed' ? '❌' : '⏳';
+            const loadingText = document.getElementById('loadingText');
+            if (loadingText) loadingText.textContent = message;
+
+            let row = stepList.querySelector(`[data-step="${step}"]`);
+            if (!row) {
+                row = document.createElement('div');
+                row.dataset.step = step;
+                row.className = 'flex items-center gap-2';
+                stepList.appendChild(row);
+            }
+            const taskIdTag = stepData.task_id ? `<span class="text-xs text-gray-400 font-mono">${escapeHtml(stepData.task_id)}</span>` : '';
+            row.innerHTML = `<span>${icon}</span><span>${escapeHtml(message)}</span>${taskIdTag}`;
+            document.getElementById('messageList').scrollTop = document.getElementById('messageList').scrollHeight;
+        }
+
+        function showErrorBanner(message) {
+            let banner = document.getElementById('errorBanner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'errorBanner';
+                banner.className = 'error-banner max-w-7xl mx-auto mt-4 px-4 py-3 rounded-lg text-sm font-medium';
+                document.querySelector('main').prepend(banner);
+            }
+            banner.textContent = message;
+        }
+
+        function clearErrorBanner() {
+            const banner = document.getElementById('errorBanner');
+            if (banner) banner.remove();
+        }
+
+        function handleError(data) {
+            // 错误事件通过 SSE 通道向前端反馈，展示失败节点与可重试动作。
+            const message = typeof data === 'string' ? data : (data?.message || '后端返回未知错误');
+            const retryAction = (data && typeof data === 'object') ? data.retry_action : '';
+            const taskId = (data && typeof data === 'object') ? data.task_id : '';
+            document.getElementById('loadingArea').classList.add('hidden');
+            showErrorBanner(message);
+            const extras = [];
+            if (taskId) extras.push(`任务 ${taskId}`);
+            if (retryAction) extras.push(`建议：${retryAction}`);
+            addMessage(`发生错误：${message}${extras.length ? '（' + extras.join('；') + '）' : ''}`, 'ai');
         }
 
         function handleThinking(thinkingData) {
@@ -1910,31 +1790,65 @@
             thinkingDiv.className = 'flex justify-start animate-slide-up mb-2';
             const stepNames = {
                 intent_recognition: '意图识别',
+                parameter_validation: '参数校验',
                 data_query: '数据查询',
+                calibration: '口径自校验',
                 anomaly_calc: '异动计算',
-                report_generation: '报告生成'
+                report_generation: '报告生成',
+                html_generation: 'HTML 生成'
             };
             const stepName = stepNames[thinkingData.step] || thinkingData.step;
 
             thinkingDiv.innerHTML = `
-                <div class="max-w-md w-full">
-                    <div class="flex items-center space-x-2 mb-1">
+                <details class="max-w-md w-full" open>
+                    <summary class="cursor-pointer flex items-center space-x-2 mb-1">
                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                         </svg>
                         <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${stepName}</span>
-                    </div>
+                    </summary>
                     <div class="thinking-bubble px-4 py-3 rounded-lg rounded-bl-none text-sm text-gray-700">
                         ${escapeHtml(thinkingData.content)}
                     </div>
-                </div>
+                </details>
             `;
 
             messageList.appendChild(thinkingDiv);
             messageList.scrollTop = messageList.scrollHeight;
         }
 
+        let typewriterQueue = '';
+        let typewriterTimer = null;
+
+        function resetTypewriter() {
+            typewriterQueue = '';
+            if (typewriterTimer) {
+                clearTimeout(typewriterTimer);
+                typewriterTimer = null;
+            }
+        }
+
         function handleText(text) {
+            currentAssistantReply += String(text || '');
+            typewriterQueue += String(text || '');
+            if (!typewriterTimer) {
+                drainTypewriterQueue();
+            }
+        }
+
+        function drainTypewriterQueue() {
+            if (!typewriterQueue) {
+                typewriterTimer = null;
+                return;
+            }
+
+            const nextChar = typewriterQueue.slice(0, 1);
+            typewriterQueue = typewriterQueue.slice(1);
+            appendStreamingText(nextChar);
+            typewriterTimer = setTimeout(drainTypewriterQueue, 8);
+        }
+
+        function appendStreamingText(text) {
             const messageList = document.getElementById('messageList');
             messageList.classList.remove('hidden');
             document.getElementById('welcomeArea').classList.add('hidden');
@@ -1966,8 +1880,57 @@
             if (streamingText) {
                 streamingText.id = '';
             }
-            addMessage('报告已生成，正在切换到完整报告展示页。', 'ai');
+            commitAssistantReply();
+            // 直接在当前页面渲染报告展示区（不依赖 HTML 下载/链接）
+            renderReport(reportData);
+            const reportUrl = reportData?.report_url || '';
+            const taskIdTag = reportData?.task_id ? `（任务 ${reportData.task_id}）` : '';
+            addMessage(reportUrl ? `报告已生成${taskIdTag}，正在打开完整可视化报告。` : `报告已生成${taskIdTag}，正在切换到完整报告展示页。`, 'ai');
             window.setTimeout(() => switchTab('report'), 500);
+            if (reportUrl) {
+                window.setTimeout(() => renderReportFrame(reportUrl, reportData?.report_http_path || '', reportData?.report_filename || ''), 650);
+            }
+        }
+
+        function renderReportFrame(reportUrl, reportHttpPath, reportFilename) {
+            const reportPanel = document.getElementById('reportPanel');
+            if (!reportPanel || !reportUrl) return;
+
+            // 辅助入口：折叠式「打开完整 HTML 报告」，报告主体已在当前页面直接渲染
+            let wrap = document.getElementById('reportFrameWrap');
+            if (!wrap) {
+                wrap = document.createElement('div');
+                wrap.id = 'reportFrameWrap';
+                wrap.className = 'report-frame-wrap rounded-xl m-6 overflow-hidden';
+                reportPanel.appendChild(wrap);
+            }
+
+            // iframe 使用同源 HTTP 路径（后端 /reports 静态目录），file:// 链接仅作展示与下载
+            const httpUrl = reportHttpPath ? `${getApiBaseUrl()}${reportHttpPath}` : reportUrl;
+            const displayUrl = reportHttpPath ? httpUrl : reportUrl;
+            wrap.innerHTML = `
+                <div class="flex items-center justify-between gap-3 p-4 border border-gray-200 bg-gray-50 rounded-t-xl">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        <span class="font-semibold text-gray-800 text-sm">打开完整 HTML 报告</span>
+                        <span class="text-xs text-gray-400">（辅助入口，页面主体已直接渲染）</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg" onclick="window.open('${escapeHtml(displayUrl)}', '_blank')">新窗口打开</button>
+                        <button class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg" onclick="toggleReportFrame()">展开/收起</button>
+                    </div>
+                </div>
+                <div id="reportFrameBody" class="hidden">
+                    <iframe class="report-frame" src="${escapeHtml(httpUrl)}" title="完整 HTML 可视化报告"></iframe>
+                </div>
+            `;
+        }
+
+        function toggleReportFrame() {
+            const body = document.getElementById('reportFrameBody');
+            if (body) body.classList.toggle('hidden');
         }
 
         function addMessage(text, type) {
@@ -2001,6 +1964,7 @@
 
         function showTaskModal() {
             document.getElementById('taskModal').classList.remove('hidden');
+            loadScheduledTasks();
         }
 
         function closeTaskModal() {
@@ -2015,10 +1979,94 @@
             document.getElementById('logModal').classList.add('hidden');
         }
 
-        function createTask() {
+        async function createTask() {
+            // 创建前确认：先展示任务配置预览，用户点「确认创建」后才写入本地配置（Demo Mock）
             const business = document.getElementById('taskBusiness').value;
-            showToast(`静态演示：${business}周报任务已展示，真实创建请运行后端版本。`);
-            closeTaskModal();
+            const cron = document.getElementById('taskTime').value;
+            const name = `${business}周报`;
+            document.getElementById('taskConfirmText').innerHTML = `
+                <div>任务名称：${escapeHtml(name)}</div>
+                <div>业务范围：${escapeHtml(business)}</div>
+                <div>周期规则：上一完整自然周</div>
+                <div>触发 cron：${escapeHtml(cron)}</div>
+                <div>接收方：本地 Demo</div>
+            `;
+            document.getElementById('taskConfirmArea').classList.remove('hidden');
+            window.pendingTaskConfig = { name, business, cron };
+        }
+
+        function cancelCreateTask() {
+            document.getElementById('taskConfirmArea').classList.add('hidden');
+            window.pendingTaskConfig = null;
+        }
+
+        async function confirmCreateTask() {
+            const cfg = window.pendingTaskConfig;
+            if (!cfg) return;
+            try {
+                const resp = await fetch(
+                    `${getApiBaseUrl()}/api/chat/schedule/create?business=${encodeURIComponent(cfg.business)}&cron=${encodeURIComponent(cfg.cron)}&name=${encodeURIComponent(cfg.name)}`,
+                    { method: 'POST' }
+                );
+                const data = await resp.json();
+                if (data.task) {
+                    showToast(`已创建定时任务「${data.task.name}」（Demo Mock 本地配置，非真实调度）`);
+                    loadScheduledTasks();
+                }
+            } catch (e) {
+                showToast(`创建失败：${e.message}`);
+            } finally {
+                document.getElementById('taskConfirmArea').classList.add('hidden');
+                window.pendingTaskConfig = null;
+            }
+        }
+
+        async function loadScheduledTasks() {
+            const listEl = document.getElementById('taskList');
+            try {
+                const resp = await fetch(`${getApiBaseUrl()}/api/chat/schedule/list`);
+                const data = await resp.json();
+                const tasks = data.tasks || [];
+                if (tasks.length === 0) {
+                    listEl.innerHTML = '<div class="text-sm text-gray-500">暂无定时任务（Demo Mock 本地配置，非真实调度）</div>';
+                    return;
+                }
+                listEl.innerHTML = tasks.map(t => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-medium text-gray-800">${escapeHtml(t.name)}</div>
+                            <div class="text-sm text-gray-500">${escapeHtml(t.business)} · cron ${escapeHtml(t.cron)} · 接收方 ${escapeHtml(t.receiver)}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs ${t.status === 'running' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} rounded">${t.status === 'running' ? '运行中' : '已暂停'}</span>
+                            ${t.status === 'running'
+                                ? `<button onclick="setTaskStatus('${t.task_id}','pause')" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">暂停</button>`
+                                : `<button onclick="setTaskStatus('${t.task_id}','resume')" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition">恢复</button>`}
+                            <button onclick="deleteTask('${t.task_id}')" class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition">删除</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                listEl.innerHTML = `<div class="text-sm text-gray-500">加载失败：${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        async function setTaskStatus(taskId, action) {
+            try {
+                await fetch(`${getApiBaseUrl()}/api/chat/schedule/${action}/${taskId}`, { method: 'POST' });
+                loadScheduledTasks();
+            } catch (e) {
+                showToast(`操作失败：${e.message}`);
+            }
+        }
+
+        async function deleteTask(taskId) {
+            try {
+                await fetch(`${getApiBaseUrl()}/api/chat/schedule/delete/${taskId}`, { method: 'POST' });
+                loadScheduledTasks();
+            } catch (e) {
+                showToast(`删除失败：${e.message}`);
+            }
         }
 
         function showToast(message) {
@@ -2142,23 +2190,28 @@
 
         // 渲染报告数据
         function renderReport(report) {
-            // 更新报告头部
+            // 更新报告头部：标题、周期、模拟数据声明、生成时间
             const header = document.querySelector('#reportPanel .border-b');
             header.querySelector('h1').textContent = `${report.business} 体验异动分析周报`;
-            header.querySelector('p').textContent = `${report.date_range}${report.data_note ? ' · ' + report.data_note : ''}`;
+            const periodEl = document.getElementById('reportPeriod');
+            if (periodEl) periodEl.textContent = report.date_range || '';
+            const noteEl = document.getElementById('reportDataNote');
+            if (noteEl) noteEl.textContent = report.data_note || '本项目使用模拟数据，仅用于作品集演示，不代表真实生产数据或真实业务结果。';
+            const timeEl = document.getElementById('reportGenTime');
+            if (timeEl) timeEl.textContent = new Date().toLocaleString('zh-CN', { hour12: false });
 
             // 更新核心指标卡片
             const cards = document.querySelectorAll('#metricCards .metric-card');
             if (cards.length >= 4) {
-                cards[0].querySelector('.text-3xl').textContent = report.current_wanfu.toFixed(2);
+                cards[0].querySelector('.text-3xl').textContent = Number(report.current_wanfu || 0).toFixed(2);
                 cards[0].querySelector('.text-xs').textContent = report.date_range ? report.date_range.split(' vs ')[0] : '本期';
-                cards[1].querySelector('.text-3xl').textContent = report.compare_wanfu.toFixed(2);
+                cards[1].querySelector('.text-3xl').textContent = Number(report.compare_wanfu || 0).toFixed(2);
                 cards[1].querySelector('.text-xs').textContent = report.date_range && report.date_range.includes(' vs ') ? report.date_range.split(' vs ')[1].split(' · ')[0] : '对比期';
-                cards[2].querySelector('.text-3xl').textContent = `${report.yoy > 0 ? '+' : ''}${report.yoy.toFixed(2)}%`;
-                cards[2].querySelector('.text-3xl').className = `metric-value text-3xl font-bold ${report.yoy > 0 ? 'text-red-600' : 'text-blue-600'}`;
+                cards[2].querySelector('.text-3xl').textContent = `${report.yoy > 0 ? '+' : ''}${Number(report.yoy || 0).toFixed(2)}%`;
+                cards[2].querySelector('.text-3xl').className = `metric-value text-3xl font-bold ${report.yoy > 0 ? 'text-red-600' : (report.yoy < 0 ? 'text-blue-600' : 'text-gray-700')}`;
                 cards[2].querySelector('.text-xs').textContent = report.yoy > 0 ? '▲ 上升' : (report.yoy < 0 ? '▼ 下降' : '持平');
-                cards[3].querySelector('.text-3xl').textContent = `${report.service_yoy > 0 ? '+' : ''}${report.service_yoy.toFixed(1)}%`;
-                cards[3].querySelector('.text-xs').textContent = `服务量 ${Number(report.service_count || 0).toLocaleString()}`;
+                cards[3].querySelector('.text-3xl').textContent = `${report.service_yoy > 0 ? '+' : ''}${Number(report.service_yoy || 0).toFixed(1)}%`;
+                cards[3].querySelector('.text-xs').textContent = `服务量 ${Number(report.service_count || 0).toLocaleString()} · 订单量 ${Number(report.order_count || 0).toLocaleString()}`;
             }
 
             // 更新综合分析
@@ -2175,24 +2228,59 @@
                 
                 if (upList) {
                     upList.innerHTML = report.top_up_factors.map(f => 
-                        `<li>• ${f.name}（${f.dim_type}）：上升 ${f.yoy.toFixed(2)}%，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
+                        `<li>• ${f.name}（${dimLabel(f.dim_type)}）：上升 ${f.yoy.toFixed(2)}%，万服波动贡献 ${f.wanfu_contribution ?? f.contrib_wanfu} 次/万单，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
                     ).join('');
                 }
                 
                 if (downList) {
                     downList.innerHTML = report.top_down_factors.map(f => 
-                        `<li>• ${f.name}（${f.dim_type}）：下降 ${f.yoy.toFixed(2)}%，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
+                        `<li>• ${f.name}（${dimLabel(f.dim_type)}）：下降 ${f.yoy.toFixed(2)}%，万服波动贡献 ${f.wanfu_contribution ?? f.contrib_wanfu} 次/万单，服务量变化占比 ${formatServiceChangeRatio(f.service_change_ratio ?? f.contrib_wanfu)}</li>`
                     ).join('');
                 }
             }
 
-            // 更新维度数据表格
-            renderDimensionTables(report.dimensions);
+            // 更新 6 维度拆解（Top3 推高/压低卡片 + 明细表）
+            renderDimensionTables(report.dimensions, report.dimension_tops);
             updateInsightSummary(report);
+
+            // 更新模块5：明细与告警
+            renderAlertsAndUnavailable(report);
 
             // 更新日趋势图表数据
             if (report.daily_trend) {
                 updateChart(report.daily_trend);
+            }
+        }
+
+        // 模块5：告警列表与不可用维度（来自 calc_result.alerts / dimension_availability）
+        function renderAlertsAndUnavailable(report) {
+            const alertList = document.getElementById('alertList');
+            const unavailable = document.getElementById('unavailableDims');
+            const alerts = (report && report.alerts) || [];
+            const availability = (report && report.dimension_availability) || {};
+
+            if (alertList) {
+                if (alerts.length === 0) {
+                    alertList.innerHTML = '<div class="text-gray-400">当前无告警。</div>';
+                } else {
+                    alertList.innerHTML = alerts.map(a => {
+                        const name = a.name || a.type || '告警';
+                        const desc = a.desc || '';
+                        const cls = a.type === 'dimension_unavailable' ? 'text-amber-600' : 'text-red-600';
+                        return `<div class="${cls}">• <strong>${escapeHtml(name)}</strong>：${escapeHtml(desc)}</div>`;
+                    }).join('');
+                }
+            }
+
+            if (unavailable) {
+                const DIM_KEY_ALIAS = {
+                    city_level: '城市等级', event_category: '事件类别', faq_level_6: '六级FAQ',
+                    store_category_level_1: '一级门店品类', incoming_channel: '进线渠道', warzone_level_1: '一级战区',
+                };
+                const unavailableKeys = Object.keys(availability).filter(k => availability[k] === false);
+                unavailable.textContent = unavailableKeys.length
+                    ? unavailableKeys.map(k => DIM_KEY_ALIAS[k] || k).join('、')
+                    : '无';
             }
         }
 
@@ -2243,6 +2331,13 @@
             return `${sign}${num.toFixed(2)}%`;
         }
 
+        function formatWanfuContribution(value) {
+            // 万服波动贡献（次/万单），用于归因排序，与服务量变化占比独立展示。
+            const num = Number(value || 0);
+            const sign = num > 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}`;
+        }
+
         function renderDimensionTable(label, items) {
             const rows = items.map((item, index) => {
                 const yoy = Number(item.yoy || 0);
@@ -2252,6 +2347,7 @@
                 const textClass = yoy > 0 ? 'text-red-600' : (yoy < 0 ? 'text-blue-600' : 'text-gray-700');
                 const arrow = isTop ? '▲' : (isBottom ? '▼' : '');
                 const ratio = item.service_change_ratio ?? item.contribution ?? item.contrib_wanfu;
+                const wanfu = item.wanfu_contribution ?? item.contrib_wanfu ?? 0;
 
                 return `
                     <tr class="border-b border-gray-100 ${bgClass}">
@@ -2260,14 +2356,15 @@
                         <td class="py-2 text-right">${Number(item.compare_value || 0).toLocaleString()}</td>
                         <td class="py-2 text-right ${textClass}">${formatSignedNumber(item.delta)}</td>
                         <td class="py-2 text-right ${textClass}">${formatSignedPercent(yoy)}</td>
-                        <td class="py-2 text-right ${textClass} font-medium">${formatServiceChangeRatio(ratio)}</td>
+                        <td class="py-2 text-right ${textClass} font-medium">${formatWanfuContribution(wanfu)}</td>
+                        <td class="py-2 text-right ${textClass}">${formatServiceChangeRatio(ratio)}</td>
                     </tr>
                 `;
             }).join('');
 
             return `
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm min-w-[680px]">
+                    <table class="w-full text-sm min-w-[820px]">
                         <thead>
                             <tr class="text-left text-gray-500 border-b">
                                 <th class="pb-2 font-medium">${escapeHtml(label)}</th>
@@ -2275,36 +2372,101 @@
                                 <th class="pb-2 font-medium text-right">去年同期</th>
                                 <th class="pb-2 font-medium text-right">变化量</th>
                                 <th class="pb-2 font-medium text-right">万服同比</th>
+                                <th class="pb-2 font-medium text-right">万服波动贡献(次/万单)</th>
                                 <th class="pb-2 font-medium text-right">服务量变化占比</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
                     </table>
+                    <p class="text-xs text-gray-400 mt-2">* 万服波动贡献用于归因排序（正值推高、负值压降）；服务量变化占比仅辅助说明服务量规模变化，不能证明因果关系。</p>
                 </div>
             `;
         }
 
-        function renderDimensionSection(containerId, label, items, withSummary = false) {
+        // 从维度明细或 dimension_tops 计算该维度 Top3 推高/压低（按 wanfu_contribution 排序）
+        function computeDimTops(items, tops) {
+            if (tops && Array.isArray(tops.top_up) && Array.isArray(tops.top_down)) {
+                return tops;
+            }
+            const list = Array.isArray(items) ? items : [];
+            const positive = list
+                .filter(it => Number(it.wanfu_contribution ?? it.contrib_wanfu ?? 0) > 0)
+                .sort((a, b) => Number(b.wanfu_contribution ?? b.contrib_wanfu ?? 0) - Number(a.wanfu_contribution ?? a.contrib_wanfu ?? 0))
+                .slice(0, 3);
+            const negative = list
+                .filter(it => Number(it.wanfu_contribution ?? it.contrib_wanfu ?? 0) < 0)
+                .sort((a, b) => Number(a.wanfu_contribution ?? a.contrib_wanfu ?? 0) - Number(b.wanfu_contribution ?? b.contrib_wanfu ?? 0))
+                .slice(0, 3);
+            return { top_up: positive, top_down: negative };
+        }
+
+        // 渲染维度 Top3 推高/压低卡片（按 wanfu_contribution 排序；service_change_ratio 仅辅助说明）
+        function renderDimensionTops(tops) {
+            const renderItem = (item, cls) => {
+                const name = item.name || '--';
+                const wanfu = Number(item.wanfu_contribution ?? item.contrib_wanfu ?? 0);
+                const ratio = Number(item.service_change_ratio ?? 0);
+                const sign = wanfu > 0 ? '+' : '';
+                const serviceDelta = item.service_delta ?? item.delta ?? 0;
+                return `
+                    <li class="flex items-center justify-between gap-2 py-1.5 border-b border-gray-100 last:border-0">
+                        <span class="font-medium text-gray-800 truncate">${escapeHtml(name)}</span>
+                        <span class="text-right shrink-0">
+                            <span class="${cls} font-bold tabular-nums">${sign}${wanfu.toFixed(2)}</span>
+                            <span class="text-xs text-gray-400 ml-1">次/万单</span>
+                        </span>
+                    </li>`;
+            };
+            const up = (tops && tops.top_up) || [];
+            const down = (tops && tops.top_down) || [];
+            const upHtml = up.length
+                ? up.map(it => renderItem(it, 'text-red-600')).join('')
+                : '<li class="text-gray-400 text-sm py-1">无显著推高项</li>';
+            const downHtml = down.length
+                ? down.map(it => renderItem(it, 'text-blue-600')).join('')
+                : '<li class="text-gray-400 text-sm py-1">无显著压低项</li>';
+
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-red-50/60 border border-red-100 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-red-600 text-sm">▲ Top3 推高</h4>
+                            <span class="text-[11px] text-gray-400">按 wanfu_contribution</span>
+                        </div>
+                        <ul class="space-y-1">${upHtml}</ul>
+                    </div>
+                    <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-blue-600 text-sm">▼ Top3 压低</h4>
+                            <span class="text-[11px] text-gray-400">按 wanfu_contribution</span>
+                        </div>
+                        <ul class="space-y-1">${downHtml}</ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDimensionSection(containerId, label, items, withSummary = false, tops = null) {
             const container = document.getElementById(containerId);
             if (!container) return;
 
             const list = Array.isArray(items) ? items : [];
+            const dimTops = computeDimTops(list, tops);
+            const topsHtml = renderDimensionTops(dimTops);
+            const tableHtml = renderDimensionTable(label, list);
+
             if (list.length === 0) {
                 container.innerHTML = `
+                    ${topsHtml}
                     <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                        ${escapeHtml(label)}暂无可展示数据。
+                        ${escapeHtml(label)}暂无可展示数据（生成报告后查看）。
                     </div>
                 `;
                 return;
             }
 
-            const tableHtml = renderDimensionTable(label, list);
-            if (!withSummary) {
-                container.innerHTML = tableHtml;
-                return;
-            }
-
             container.innerHTML = `
+                ${topsHtml}
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div class="lg:col-span-2">${tableHtml}</div>
                     <div class="bg-gray-50 rounded-xl p-4">
@@ -2335,13 +2497,54 @@
             `;
         }
 
-        // 渲染维度表格
-        function renderDimensionTables(dimensions = {}) {
-            renderDimensionSection('dim_city', '城市等级', dimensions['城市等级'], true);
-            renderDimensionSection('dim_category', '品类', dimensions['品类']);
-            renderDimensionSection('dim_event', '事件类别', dimensions['事件类别']);
-            renderDimensionSection('dim_channel', '进线渠道', dimensions['进线渠道']);
-            renderDimensionSection('dim_zone', '战区', dimensions['战区']);
+        // 渲染维度表格（标准 6 维度，兼容中英文键，避免静态演示数据与后端标准字段不一致）
+        const DIMENSION_LABELS = {
+            city_level: '城市等级', '城市等级': '城市等级',
+            event_category: '事件类别', '事件类别': '事件类别',
+            faq_level_6: '六级FAQ', 'FAQ': '六级FAQ', '六级FAQ': '六级FAQ',
+            store_category_level_1: '一级门店品类', '品类': '一级门店品类', '一级门店品类': '一级门店品类',
+            incoming_channel: '进线渠道', '进线渠道': '进线渠道',
+            warzone_level_1: '一级战区', '战区': '一级战区', '一级战区': '一级战区',
+        };
+
+        const DIMENSION_KEY_ALIASES = {
+            city_level: ['city_level', '城市等级'],
+            event_category: ['event_category', '事件类别'],
+            faq_level_6: ['faq_level_6', 'FAQ', '六级FAQ'],
+            store_category_level_1: ['store_category_level_1', '品类', '一级门店品类'],
+            incoming_channel: ['incoming_channel', '进线渠道'],
+            warzone_level_1: ['warzone_level_1', '战区', '一级战区'],
+        };
+
+        function dimLabel(key) {
+            return DIMENSION_LABELS[key] || key || '';
+        }
+
+        function getDimItems(dimensions, key) {
+            if (!dimensions) return [];
+            for (const alias of (DIMENSION_KEY_ALIASES[key] || [key])) {
+                const items = dimensions[alias];
+                if (Array.isArray(items)) return items;
+            }
+            return [];
+        }
+
+        function getDimTops(dimensionTops, key) {
+            if (!dimensionTops) return null;
+            for (const alias of (DIMENSION_KEY_ALIASES[key] || [key])) {
+                const tops = dimensionTops[alias];
+                if (tops && typeof tops === 'object') return tops;
+            }
+            return null;
+        }
+
+        function renderDimensionTables(dimensions = {}, dimensionTops = {}) {
+            renderDimensionSection('dim_city', '城市等级', getDimItems(dimensions, 'city_level'), true, getDimTops(dimensionTops, 'city_level'));
+            renderDimensionSection('dim_category', '一级门店品类', getDimItems(dimensions, 'store_category_level_1'), false, getDimTops(dimensionTops, 'store_category_level_1'));
+            renderDimensionSection('dim_event', '事件类别', getDimItems(dimensions, 'event_category'), false, getDimTops(dimensionTops, 'event_category'));
+            renderDimensionSection('dim_faq', '六级FAQ', getDimItems(dimensions, 'faq_level_6'), false, getDimTops(dimensionTops, 'faq_level_6'));
+            renderDimensionSection('dim_channel', '进线渠道', getDimItems(dimensions, 'incoming_channel'), false, getDimTops(dimensionTops, 'incoming_channel'));
+            renderDimensionSection('dim_zone', '一级战区', getDimItems(dimensions, 'warzone_level_1'), false, getDimTops(dimensionTops, 'warzone_level_1'));
         }
 
         // 初始化图表
@@ -2500,7 +2703,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             renderReport(STATIC_REPORT_DATA);
-            switchTab('report');
+            switchTab('chat');
         });
     </script>
 </body>

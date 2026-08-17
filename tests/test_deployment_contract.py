@@ -18,7 +18,7 @@ class DeploymentContractTest(unittest.TestCase):
 
     def test_fastapi_serves_frontend_at_root(self):
         self.assertIn("FileResponse", self.main_py)
-        self.assertIn('frontend_index = os.path.join(frontend_dir, "vibe_coding_prototype.html")', self.main_py)
+        self.assertIn('frontend_index = os.path.join(frontend_dir, "index.html")', self.main_py)
         self.assertIn("return FileResponse(frontend_index)", self.main_py)
         self.assertIn('@app.get("/vibe_coding_prototype.html"', self.main_py)
 

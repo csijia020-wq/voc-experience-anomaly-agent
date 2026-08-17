@@ -9,6 +9,7 @@ if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
 from app.agent.core import analysis_agent
+from app.services.llm import LLMServiceError
 
 
 class NaturalLanguageIntentTest(unittest.TestCase):
@@ -16,14 +17,12 @@ class NaturalLanguageIntentTest(unittest.TestCase):
         os.environ["DEMO_DETERMINISTIC"] = "true"
         os.environ["DEMO_SEED"] = "20260702"
 
-    def _assert_no_llm_call(self, message):
-        called = False
+    def _parse_with_llm_fallback(self, message):
+        """模拟 LLM 不可用（抛异常），验证降级到规则解析且结果正确。"""
         original_chat = analysis_agent.llm.chat
 
         def fake_chat(*args, **kwargs):
-            nonlocal called
-            called = True
-            raise AssertionError("intent recognition should not need LLM for demo-safe expressions")
+            raise LLMServiceError(code="LLM_TEST_FALLBACK", user_message="test fallback")
 
         analysis_agent.llm.chat = fake_chat
         try:
@@ -31,11 +30,10 @@ class NaturalLanguageIntentTest(unittest.TestCase):
         finally:
             analysis_agent.llm.chat = original_chat
 
-        self.assertFalse(called)
         return result
 
     def test_report_synonyms_parse_without_llm(self):
-        result = self._assert_no_llm_call("复盘企客业务2026年3月体验指标")
+        result = self._parse_with_llm_fallback("复盘企客业务2026年3月体验指标")
         self.assertEqual(result["intent"], "generate_report")
         self.assertEqual(result["business"], "企客业务")
         self.assertEqual(result["business_source"], "explicit_user_input")
@@ -46,14 +44,14 @@ class NaturalLanguageIntentTest(unittest.TestCase):
         self.assertFalse(result["needs_clarification"])
 
     def test_query_synonyms_parse_explicit_week(self):
-        result = self._assert_no_llm_call("查一下闪购客服2026W2数据")
+        result = self._parse_with_llm_fallback("查一下闪购客服2026W2数据")
         self.assertEqual(result["intent"], "query_data")
         self.assertEqual(result["business"], "闪购客服")
         self.assertEqual(result["period"], "2026W02")
         self.assertEqual(result["period_source"], "explicit_user_input")
 
     def test_unsupported_business_is_explainable(self):
-        result = self._assert_no_llm_call("生成海外机票客服上周周报")
+        result = self._parse_with_llm_fallback("生成海外机票客服上周周报")
         self.assertEqual(result["intent"], "generate_report")
         self.assertEqual(result["business"], "海外机票客服")
         self.assertIn("不支持", result["unsupported_reason"])

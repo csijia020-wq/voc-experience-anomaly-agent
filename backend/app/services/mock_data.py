@@ -1,5 +1,8 @@
 """
 Mock数据服务 - 模拟数据查询
+
+@Deprecated: Use query_friday_data + anomaly_calc instead. This module is kept
+only for legacy imports and should not be used by API routes.
 """
 import pandas as pd
 import os
@@ -10,7 +13,7 @@ import random
 
 
 class MockDataService:
-    """Mock数据服务，模拟真实的数据查询"""
+    """@Deprecated: Use query_friday_data + anomaly_calc instead."""
 
     # 历史问题：CSV 用中文列名（业务名称、本期服务量…），而 query_data 等
     # 方法按英文列名（business、current_service_count…）取值，导致 KeyError。
