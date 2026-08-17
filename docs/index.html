@@ -500,6 +500,8 @@
         let currentAssistantReply = '';
         // 报告数据只允许来自后端 report 事件；初始为空，绝不填充静态报告
         let currentReportData = null;
+        // 后端连接状态：页面加载时通过 /health 探测；不可达时阻止发送与报告展示
+        let backendHealthy = false;
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -515,6 +517,10 @@
             if (tab === 'chat') {
                 document.getElementById('chatPanel').classList.remove('hidden');
                 document.getElementById('reportPanel').classList.add('hidden');
+            } else if (!backendHealthy) {
+                // 后端不可达时阻止进入报告展示：报告只可能来自后端
+                showBackendUnavailable(getApiBaseUrl());
+                return;
             } else {
                 document.getElementById('chatPanel').classList.add('hidden');
                 document.getElementById('reportPanel').classList.remove('hidden');
@@ -599,19 +605,34 @@
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
+                backendHealthy = true;
                 return true;
             } catch (error) {
+                backendHealthy = false;
                 showBackendUnavailable(apiBase);
                 return false;
             }
         }
 
-        // 后端不可达提示：显示明确错误与启动命令，不展示任何静态报告。
+        // 后端不可达：显示明确错误、禁用发送按钮、阻止报告展示，不展示任何静态报告。
         function showBackendUnavailable(apiBase) {
+            backendHealthy = false;
             const messageList = document.getElementById('messageList');
             messageList.classList.remove('hidden');
             document.getElementById('welcomeArea').classList.add('hidden');
             document.getElementById('loadingArea').classList.add('hidden');
+
+            // 禁用发送按钮与输入框
+            const sendBtn = document.querySelector('#chatPanel button[onclick="sendMessage()"]');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.disabled = true;
+                chatInput.placeholder = '后端未连接，无法发送';
+            }
 
             let banner = document.getElementById('backendDownBanner');
             if (!banner) {
@@ -619,8 +640,8 @@
                 banner.id = 'backendDownBanner';
                 banner.className = 'rounded-xl border border-red-200 bg-red-50 p-4 mb-4 animate-slide-up';
                 banner.innerHTML = `
-                    <div class="font-bold text-red-600 mb-1">后端服务未连接</div>
-                    <div class="text-sm text-red-700 mb-2">请先启动后端服务，然后刷新页面重试。</div>
+                    <div class="font-bold text-red-600 mb-1">后端服务未连接，请先启动后端服务。</div>
+                    <div class="text-sm text-red-700 mb-2">启动后刷新页面重试。报告数据仅来自后端，后端不可达时不会展示任何静态报告。</div>
                     <div class="text-xs text-gray-600 bg-white rounded-lg p-2 font-mono">python start_servers.py start</div>
                 `;
                 messageList.appendChild(banner);
@@ -632,6 +653,12 @@
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
+
+            // 后端未连接时直接阻止发送，不进入任何报告生成路径
+            if (!backendHealthy) {
+                showBackendUnavailable(getApiBaseUrl());
+                return;
+            }
 
             const messageList = document.getElementById('messageList');
             // 不清空历史，保留多轮澄清对话

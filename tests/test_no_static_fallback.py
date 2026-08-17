@@ -25,6 +25,15 @@ class NoStaticFallbackTest(unittest.TestCase):
     def test_no_static_report_data(self):
         self.assertNotIn("STATIC_REPORT_DATA", self.html)
         self.assertNotIn("STATIC_THINKING_STEPS", self.html)
+        self.assertNotIn("STATIC_", self.html)
+        # 不得包含可渲染的完整静态 report payload（指标卡数字+维度明细+summary 的组合）
+        self.assertNotIn('"current_wanfu": 120.47', self.html)
+        self.assertNotIn('"top_up_factors"', self.html)
+
+    def test_no_static_text_claims(self):
+        # 不得出现「无需后端/不调用后端/静态作品集版不调用真实 DeepSeek」等文案
+        for phrase in ["无需后端", "不调用后端", "不调用真实 DeepSeek", "静态作品集版", "不需要后端"]:
+            self.assertNotIn(phrase, self.html)
 
     def test_no_static_fallback_branches(self):
         self.assertNotIn("runStaticDemo", self.html)
@@ -47,6 +56,16 @@ class NoStaticFallbackTest(unittest.TestCase):
         self.assertIn("请先启动后端服务", self.html)
         self.assertIn("python start_servers.py start", self.html)
 
+    def test_backend_unavailable_disables_send_and_blocks_report_tab(self):
+        # 后端不可达时：禁用发送按钮/输入框、阻止报告展示 Tab、不展示指标卡/6维度
+        self.assertIn("backendHealthy = false", self.html)
+        self.assertIn("sendBtn.disabled = true", self.html)
+        self.assertIn("chatInput.disabled = true", self.html)
+        self.assertIn("else if (!backendHealthy)", self.html)
+        self.assertIn("showBackendUnavailable(getApiBaseUrl())", self.html)
+        # 未连接时 sendMessage 直接阻止，不进入报告生成路径
+        self.assertIn("if (!backendHealthy)", self.html)
+
     def test_send_always_calls_backend_stream(self):
         self.assertIn("/api/chat/stream", self.html)
         self.assertIn("method: 'POST'", self.html)
@@ -60,6 +79,12 @@ class NoStaticFallbackTest(unittest.TestCase):
         self.assertIn("currentReportData = reportData", self.html)
         # 报告页无后端数据时显示空状态
         self.assertIn("function showEmptyReportState", self.html)
+        # 没有后端 report 事件就没有报告渲染调用点
+        report_render_calls = re.findall(r"renderReport\s*\(", self.html)
+        self.assertTrue(report_render_calls)
+        # 所有 renderReport 调用必须受后端数据保护（handleReport 内 或 currentReportData 条件内）
+        self.assertIn("currentReportData && currentReportData.business", self.html)
+        self.assertNotIn("renderReport(STATIC_REPORT_DATA)", self.html)
 
     def test_current_report_data_starts_empty(self):
         self.assertRegex(self.html, re.compile(r"let currentReportData = null;"))
